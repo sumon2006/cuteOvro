@@ -2,7 +2,7 @@ import express from 'express';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { GoogleGenAI, ThinkingLevel } from '@google/genai';
+import { GoogleGenAI } from '@google/genai';
 
 dotenv.config();
 
@@ -48,19 +48,14 @@ Think deeply through customer psychology, margin sustainability (COGS, shipping,
     const fullPrompt = `${systemPrompt}\n\nTask:\n${prompt}\n\nProduct Information:\n${JSON.stringify(productInfo || {}, null, 2)}`;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-3.1-pro-preview',
+      model: 'gemini-3.8-flash',
       contents: fullPrompt,
-      config: {
-        thinkingConfig: {
-          thinkingLevel: ThinkingLevel.HIGH,
-        },
-      },
     });
 
     return res.json({
       success: true,
       result: response.text,
-      source: 'gemini-3.1-pro-preview (high-thinking)',
+      source: 'gemini-3.8-flash',
     });
   } catch (err: any) {
     console.error('Gemini error:', err);
@@ -118,9 +113,28 @@ function generateFallbackThinking(type: string, prompt: string, info: any = {}) 
 - **WhatsApp Follow-up:** Send automated confirmation within 3 minutes of order placement to confirm COD addresses and reduce RTO.`;
 }
 
+// Admin & Orders portal convenience redirects
+app.get(['/admin', '/admin.html'], (req, res) => {
+  res.redirect('/owner-portal-access.html');
+});
+
+app.get(['/orders', '/orders.html'], (req, res) => {
+  res.redirect('/owner-portal-access.html?tab=orders');
+});
+
+app.get(['/owner', '/portal'], (req, res) => {
+  res.redirect('/owner-portal-access.html');
+});
+
 // Development vs Production serving
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, 'dist')));
+  app.get('/owner-portal-access', (req, res) => {
+    res.sendFile(path.join(__dirname, 'dist', 'owner-portal-access.html'));
+  });
+  app.get('/product', (req, res) => {
+    res.sendFile(path.join(__dirname, 'dist', 'product.html'));
+  });
   app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'dist', 'index.html'));
   });

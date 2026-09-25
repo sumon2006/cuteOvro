@@ -16,12 +16,16 @@ export default defineConfig(() => {
         input: {
           main: path.resolve(__dirname, 'index.html'),
           owner: path.resolve(__dirname, 'owner-portal-access.html'),
+          product: path.resolve(__dirname, 'product.html'),
+          admin: path.resolve(__dirname, 'admin.html'),
+          orders: path.resolve(__dirname, 'orders.html'),
         },
       },
     },
     server: {
       port: 3000,
       host: '0.0.0.0',
+      allowedHosts: true as const,
       // HMR is disabled in AI Studio via DISABLE_HMR env var.
       hmr: process.env.DISABLE_HMR !== 'true',
       watch: process.env.DISABLE_HMR === 'true' ? null : {},

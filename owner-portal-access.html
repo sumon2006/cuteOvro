@@ -839,6 +839,11 @@
       await loadOrdersList();
       await loadAdminCatalog();
       setupRealtimeOrdersListener();
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get('tab');
+      if (tabParam === 'products' || tabParam === 'orders') {
+        switchPortalTab(tabParam);
+      }
     }
 
     function syncPortalBranding() {
