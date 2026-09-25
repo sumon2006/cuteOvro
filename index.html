@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth overflow-x-hidden">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+  <title>cuteOVRO - Shop Your Vibe | Trending Fashion & Gadgets</title>
+  
+  <!-- Tailwind CSS & Lucide Icons -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- Google Font: Nunito -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { nunito: ['"Nunito"', 'sans-serif'] },
+          colors: {
+            brand: { bg: '#FFFDF9', pink: '#F74571', yellow: '#FFC107', navy: '#1A1C23', teal: '#329688' }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body { font-family: 'Nunito', sans-serif; background-color: #FFFDF9; color: #1A1C23; }
+    .hide-scrollbar::-webkit-scrollbar { display: none; }
+    .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    .neo-shadow { box-shadow: 4px 4px 0px 0px #1A1C23; transition: all 0.2s ease; }
+    .neo-shadow:active { box-shadow: 0px 0px 0px 0px #1A1C23; transform: translate(4px, 4px); }
+    .neo-shadow-sm { box-shadow: 2px 2px 0px 0px #1A1C23; transition: all 0.2s ease; }
+    .neo-shadow-sm:active { box-shadow: 0px 0px 0px 0px #1A1C23; transform: translate(2px, 2px); }
+  </style>
+</head>
+<body class="bg-[#FFFDF9] min-h-screen flex flex-col font-nunito pb-20 md:pb-0">
+
+  <!-- TOP BANNER -->
+  <div class="bg-[#FFC107] border-b-2 border-[#1A1C23] py-2 text-center text-[#1A1C23] font-black text-xs tracking-wider">
+    ✨ ZERO PAYMENT GATEWAY FEES • DIRECT UPI QR • FREE SHIPPING PAN-INDIA ✨
+  </div>
+
+  <!-- HEADER -->
+  <header class="sticky top-0 z-40 bg-[#FFFDF9]/95 backdrop-blur-md border-b-2 border-[#1A1C23] w-full">
+    <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+      
+      <!-- LOGO -->
+      <a href="/" class="flex items-center gap-2 sm:gap-3 group">
+        <div class="w-12 h-12 sm:w-14 sm:h-14 shrink-0 transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-6">
+          <img src="logo (3).png" alt="cuteOVRO Logo" class="w-full h-full object-contain drop-shadow-[2px_2px_0px_#1A1C23]" />
+        </div>
+        <div class="flex flex-col justify-center">
+          <span class="text-2xl sm:text-3xl font-black tracking-tight text-[#F74571] leading-none">cute<span class="text-[#1A1C23]">OVRO</span></span>
+          <span class="text-[10px] font-bold uppercase tracking-widest text-slate-500 mt-0.5">Shop Your Vibe</span>
+        </div>
+      </a>
+
+      <!-- KEBAB MENU -->
+      <div class="relative" id="kebabMenuContainer">
+        <button id="kebabMenuBtn" class="w-12 h-12 bg-[#FFC107] border-2 border-[#1A1C23] rounded-2xl flex items-center justify-center neo-shadow-sm cursor-pointer">
+          <i data-lucide="more-vertical" class="w-6 h-6 stroke-[3]"></i>
+        </button>
+
+        <div id="kebabDropdown" class="hidden absolute right-0 top-16 w-64 bg-white border-2 border-[#1A1C23] rounded-2xl shadow-[6px_6px_0px_0px_#1A1C23] p-2 z-50 flex flex-col gap-1">
+          <button onclick="handleAccountMenuClick()" class="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-[#FFEBF1] transition-colors text-left group cursor-pointer">
+            <div class="w-10 h-10 bg-[#FFC107] border-2 border-[#1A1C23] rounded-xl flex items-center justify-center text-lg shrink-0">👤</div>
+            <div class="flex flex-col min-w-0">
+              <span id="menuAccountTitle" class="font-bold text-sm text-[#1A1C23]">User Account</span>
+              <span id="menuAccountSub" class="text-xs text-slate-500">Login / Sign Up</span>
+            </div>
+          </button>
+          
+          <div id="logoutDivider" class="hidden h-[1px] bg-slate-200 mx-2"></div>
+          <button id="logoutBtn" onclick="handleLogoutClick()" class="hidden w-full items-center gap-3 p-3 rounded-xl hover:bg-red-50 transition-colors text-left group cursor-pointer">
+            <div class="w-10 h-10 bg-red-100 text-red-500 border-2 border-[#1A1C23] rounded-xl flex items-center justify-center text-lg shrink-0">🚪</div>
+            <div class="flex flex-col min-w-0">
+              <span class="font-bold text-sm text-red-500">Logout</span>
+              <span class="text-xs text-slate-500">Sign out safely</span>
+            </div>
+          </button>
+
+          <div class="h-[1px] bg-slate-200 mx-2"></div>
+          <button onclick="openCartModal()" class="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-[#FFF7D6] transition-colors text-left group cursor-pointer">
+            <div class="w-10 h-10 bg-[#F74571] text-white border-2 border-[#1A1C23] rounded-xl flex items-center justify-center text-lg relative shrink-0">
+              🛒
+              <span id="cartBadgeMenu" class="absolute -top-2 -right-2 bg-[#1A1C23] text-white text-[10px] font-black w-5 h-5 flex items-center justify-center rounded-full border-2 border-white hidden">0</span>
+            </div>
+            <div class="flex flex-col min-w-0">
+              <span class="font-bold text-sm text-[#1A1C23]">My Cart</span>
+              <span class="text-xs text-slate-500">View added items</span>
+            </div>
+          </button>
+
+          <div class="h-[1px] bg-slate-200 mx-2"></div>
+          <button onclick="openTrackOrderModal()" class="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-[#E5F6F3] transition-colors text-left group cursor-pointer">
+            <div class="w-10 h-10 bg-[#329688] text-white border-2 border-[#1A1C23] rounded-xl flex items-center justify-center text-lg shrink-0">📦</div>
+            <div class="flex flex-col min-w-0">
+              <span class="font-bold text-sm text-[#1A1C23]">Track Order</span>
+              <span class="text-xs text-slate-500">Live Status Check</span>
+            </div>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- SEARCH BAR -->
+  <section class="max-w-7xl mx-auto px-6 py-6 w-full">
+    <div class="relative">
+      <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+        <i data-lucide="search" class="w-5 h-5 text-slate-400"></i>
+      </div>
+      <input type="text" id="searchInput" oninput="filterProducts()" placeholder="Search for kurtis, gadgets, decor..." class="w-full bg-white border-2 border-[#1A1C23] rounded-2xl pl-12 pr-4 py-4 text-sm font-black neo-shadow-sm focus:outline-none focus:border-[#F74571] text-[#1A1C23]" />
+    </div>
+  </section>
+
+  <!-- CATEGORY FILTER -->
+  <section class="max-w-7xl mx-auto px-6 pb-4">
+    <div class="flex gap-3 overflow-x-auto hide-scrollbar py-2">
+      <button class="cat-btn active bg-[#F74571] text-white border-2 border-[#1A1C23] px-6 py-3 rounded-2xl font-black text-sm neo-shadow-sm shrink-0 cursor-pointer" data-cat="all">✨ All Items</button>
+      <button class="cat-btn bg-white text-[#1A1C23] border-2 border-[#1A1C23] px-6 py-3 rounded-2xl font-black text-sm neo-shadow-sm shrink-0 cursor-pointer" data-cat="Kurtis">👗 Kurtis</button>
+      <button class="cat-btn bg-white text-[#1A1C23] border-2 border-[#1A1C23] px-6 py-3 rounded-2xl font-black text-sm neo-shadow-sm shrink-0 cursor-pointer" data-cat="Gadgets">⌚ Gadgets</button>
+      <button class="cat-btn bg-white text-[#1A1C23] border-2 border-[#1A1C23] px-6 py-3 rounded-2xl font-black text-sm neo-shadow-sm shrink-0 cursor-pointer" data-cat="Home Decor">🛋️ Decor</button>
+    </div>
+  </section>
+
+  <!-- CATALOG GRID -->
+  <main id="catalogSection" class="max-w-7xl mx-auto px-6 py-4 flex-1 w-full">
+    <div id="productGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+      <!-- Products loaded here -->
+    </div>
+    <div id="noResultsMsg" class="hidden text-center py-10 w-full">
+      <span class="text-4xl">😢</span>
+      <h3 class="text-xl font-black text-[#1A1C23] mt-3">No products found</h3>
+      <p class="text-sm font-bold text-slate-500">Try searching with a different word.</p>
+    </div>
+  </main>
+
+  <!-- AUTHENTICATION MODAL -->
+  <div id="authModal" class="fixed inset-0 z-50 bg-[#1A1C23]/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full border-4 border-[#1A1C23] shadow-[8px_8px_0px_0px_#1A1C23] overflow-hidden flex flex-col relative">
+      <button onclick="closeAuthModal()" class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center bg-[#FFEBF1] text-[#F74571] border-2 border-[#1A1C23] rounded-xl font-black hover:bg-[#F74571] hover:text-white transition cursor-pointer">X</button>
+      <div class="p-8">
+        <h2 class="text-2xl font-black text-[#1A1C23] text-center mb-6" id="authTitle">Welcome Back</h2>
+        <button onclick="loginWithGoogle()" class="w-full bg-[#FFFDF9] border-2 border-[#1A1C23] rounded-2xl py-3.5 flex items-center justify-center gap-3 neo-shadow-sm font-black text-[#1A1C23] hover:bg-slate-50 cursor-pointer">
+          Continue with Google
+        </button>
+        <div class="flex items-center gap-3 my-5">
+          <hr class="flex-1 border-t-2 border-slate-200">
+          <span class="text-xs font-black text-slate-400 uppercase tracking-widest">OR EMAIL</span>
+          <hr class="flex-1 border-t-2 border-slate-200">
+        </div>
+        <form id="authForm" onsubmit="handleAuthSubmit(event)" class="space-y-4">
+          <input type="text" id="authName" placeholder="Full Name" class="hidden w-full bg-[#FFFDF9] border-2 border-[#1A1C23] rounded-2xl px-4 py-3.5 text-sm font-bold placeholder-slate-400 focus:outline-none focus:border-[#F74571]" />
+          <input type="email" id="authEmail" required placeholder="Email Address" class="w-full bg-[#FFFDF9] border-2 border-[#1A1C23] rounded-2xl px-4 py-3.5 text-sm font-bold placeholder-slate-400 focus:outline-none focus:border-[#F74571]" />
+          <input type="password" id="authPassword" required placeholder="Password (Min 6 char)" class="w-full bg-[#FFFDF9] border-2 border-[#1A1C23] rounded-2xl px-4 py-3.5 text-sm font-bold placeholder-slate-400 focus:outline-none focus:border-[#F74571]" />
+          <button type="submit" id="authSubmitBtn" class="w-full bg-[#FFC107] border-2 border-[#1A1C23] rounded-2xl py-3.5 neo-shadow-sm font-black text-lg text-[#1A1C23] mt-2 cursor-pointer">Log In</button>
+        </form>
+        <div class="mt-6 text-center">
+          <button type="button" onclick="toggleAuthMode()" id="authToggleBtn" class="text-sm font-black text-[#F74571] hover:underline underline-offset-4 cursor-pointer">Need an account? Sign Up</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CART MODAL -->
+  <div id="cartModal" class="fixed inset-0 z-50 bg-[#1A1C23]/80 backdrop-blur-sm hidden flex items-center justify-center p-4 lg:justify-end lg:p-0">
+    <div class="bg-white lg:rounded-l-3xl lg:rounded-r-none rounded-3xl w-full max-w-lg lg:h-screen lg:max-h-screen max-h-[90vh] border-4 lg:border-r-0 border-[#1A1C23] shadow-[8px_8px_0px_0px_#1A1C23] flex flex-col relative overflow-hidden">
+      <div class="bg-[#F74571] border-b-2 border-[#1A1C23] p-5 flex items-center justify-between shrink-0">
+        <h2 class="text-2xl font-black text-white flex items-center gap-2">🛒 My Cart</h2>
+        <button onclick="closeCartModal()" class="w-10 h-10 bg-white border-2 border-[#1A1C23] rounded-xl flex items-center justify-center font-black neo-shadow-sm text-[#1A1C23] cursor-pointer">X</button>
+      </div>
+      <div id="cartItemsContainer" class="flex-1 overflow-y-auto p-6 flex flex-col gap-4 bg-[#FFFDF9]"></div>
+      <div class="bg-white border-t-2 border-[#1A1C23] p-6 shrink-0">
+        <div class="flex justify-between items-center mb-4">
+          <span class="text-lg font-bold text-slate-600">Total Payable:</span>
+          <span id="cartTotalDisplay" class="text-3xl font-black text-[#1A1C23]">₹0</span>
+        </div>
+        <button onclick="proceedToCheckout()" class="w-full bg-[#329688] border-2 border-[#1A1C23] text-white rounded-2xl py-4 text-xl font-black neo-shadow cursor-pointer">Proceed to Checkout ⚡</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TRACK ORDER MODAL -->
+  <div id="trackOrderModal" class="fixed inset-0 z-50 bg-[#1A1C23]/70 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 border-4 border-[#1A1C23] shadow-[8px_8px_0px_0px_#1A1C23] max-h-[80vh] flex flex-col">
+      <div class="flex items-center justify-between border-b-2 border-[#1A1C23] pb-3 mb-4 shrink-0">
+        <h3 class="text-lg font-black text-[#1A1C23]">Track Your Orders 📦</h3>
+        <button onclick="closeTrackOrderModal()" class="w-8 h-8 bg-slate-100 border-2 border-[#1A1C23] rounded-xl font-black cursor-pointer hover:bg-red-100 transition">X</button>
+      </div>
+      <p class="text-xs font-bold text-slate-600 mb-3 shrink-0">Enter your WhatsApp Number:</p>
+      <div class="flex gap-2 shrink-0">
+        <input type="tel" id="trackInput" placeholder="e.g. 9876543210" class="w-full bg-[#FFFDF9] border-2 border-[#1A1C23] rounded-xl px-4 py-3 text-sm font-bold focus:outline-none focus:border-[#329688]" />
+        <button onclick="searchOrderStatus()" class="bg-[#329688] hover:bg-[#287a6e] border-2 border-[#1A1C23] text-white font-black px-5 rounded-xl neo-shadow-sm cursor-pointer transition">Track</button>
+      </div>
+      <div id="trackResultBox" class="hidden mt-4 bg-slate-50 border-2 border-[#1A1C23] rounded-xl p-3 text-xs font-bold overflow-y-auto flex-1 flex-col gap-3"></div>
+    </div>
+  </div>
+
+  <!-- DIRECT ORDER MODAL (Address Form) -->
+  <div id="orderModal" class="fixed inset-0 z-50 bg-[#1A1C23]/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-lg w-full border-4 border-[#1A1C23] shadow-[8px_8px_0px_0px_#1A1C23] overflow-hidden flex flex-col relative max-h-[90vh]">
+      <div class="bg-[#329688] text-white p-5 border-b-2 border-[#1A1C23] flex items-center justify-between">
+        <h3 class="text-xl font-black">Complete Your Order ⚡</h3>
+        <button onclick="closeOrderModal()" class="w-8 h-8 bg-white text-[#1A1C23] border-2 border-[#1A1C23] rounded-xl font-black cursor-pointer">X</button>
+      </div>
+      <div class="p-6 overflow-y-auto space-y-4">
+        <div id="orderProductSummary" class="bg-[#FFF7D6] border-2 border-[#1A1C23] p-3 rounded-2xl flex items-center gap-3"></div>
+        <form id="orderForm" onsubmit="handleDirectOrderSubmit(event)" class="space-y-3">
+          <input type="hidden" id="orderProductId" />
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-black text-slate-700 mb-1">Full Name *</label>
+              <input type="text" id="custName" required placeholder="Sumon Pal" class="w-full bg-[#FFFDF9] border-2 border-[#1A1C23] rounded-xl px-3 py-2 text-sm font-bold" />
+            </div>
+            <div>
+              <label class="block text-xs font-black text-slate-700 mb-1">WhatsApp No. *</label>
+              <input type="tel" id="custPhone" required placeholder="9876543210" class="w-full bg-[#FFFDF9] border-2 border-[#1A1C23] rounded-xl px-3 py-2 text-sm font-bold" />
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-black text-slate-700 mb-1">House no. / Building name *</label>
+            <input type="text" id="custHouse" required placeholder="Flat 4B, Sunrise Apartment" class="w-full bg-[#FFFDF9] border-2 border-[#1A1C23] rounded-xl px-3 py-2 text-sm font-bold" />
+          </div>
+          <div>
+            <label class="block text-xs font-black text-slate-700 mb-1">Road name / Area / Colony *</label>
+            <input type="text" id="custRoad" required placeholder="MG Road, Sector 5" class="w-full bg-[#FFFDF9] border-2 border-[#1A1C23] rounded-xl px-3 py-2 text-sm font-bold" />
+          </div>
+          <div class="grid grid-cols-3 gap-3">
+            <div>
+              <label class="block text-xs font-black text-slate-700 mb-1">Pincode *</label>
+              <input type="text" id="custPincode" required placeholder="700001" class="w-full bg-[#FFFDF9] border-2 border-[#1A1C23] rounded-xl px-3 py-2 text-sm font-bold" />
+            </div>
+            <div>
+              <label class="block text-xs font-black text-slate-700 mb-1">City *</label>
+              <input type="text" id="custCity" required placeholder="Kolkata" class="w-full bg-[#FFFDF9] border-2 border-[#1A1C23] rounded-xl px-3 py-2 text-sm font-bold" />
+            </div>
+            <div>
+              <label class="block text-xs font-black text-slate-700 mb-1">State *</label>
+              <input type="text" id="custState" required placeholder="West Bengal" class="w-full bg-[#FFFDF9] border-2 border-[#1A1C23] rounded-xl px-3 py-2 text-sm font-bold" />
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-black text-slate-700 mb-1">Payment Mode *</label>
+            <select id="custPaymentMode" onchange="toggleUtrField(this.value)" class="w-full bg-[#FFFDF9] border-2 border-[#1A1C23] rounded-xl px-3 py-2 text-sm font-bold">
+              <option value="UPI">✨ UPI QR (0% Fees - Instant Verify)</option>
+              <option value="COD">💵 Cash on Delivery</option>
+            </select>
+          </div>
+          <div id="upiSection" class="p-3 bg-[#FFF7D6] border-2 border-[#1A1C23] rounded-xl space-y-2">
+            <p class="text-xs font-bold text-slate-800">Scan & Pay via UPI:</p>
+            <div class="text-center">
+              <img id="upiQrImg" src="" alt="UPI QR" class="w-32 h-32 mx-auto border-2 border-[#1A1C23] rounded-lg bg-white" />
+              <p id="upiIdText" class="text-xs font-black text-[#F74571] mt-1"></p>
+            </div>
+            <input type="text" id="custUtr" placeholder="Enter 12-digit UTR / UPI Ref No." class="w-full bg-white border-2 border-[#1A1C23] rounded-xl px-3 py-2 text-xs font-bold" />
+          </div>
+          <button type="submit" id="placeOrderBtn" class="w-full bg-[#329688] border-2 border-[#1A1C23] text-white font-black py-3 rounded-2xl neo-shadow text-base mt-2 cursor-pointer">
+            Place Order Now 🚀
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- CUSTOM APP UI ALERT -->
+  <div id="customAlertModal" class="fixed inset-0 z-[60] bg-[#1A1C23]/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-sm w-full border-4 border-[#1A1C23] shadow-[8px_8px_0px_0px_#1A1C23] overflow-hidden flex flex-col p-6 text-center transform transition-transform">
+      <div id="customAlertIcon" class="text-5xl mb-4">🔔</div>
+      <h3 id="customAlertTitle" class="text-xl font-black text-[#1A1C23] mb-2 leading-tight">Message</h3>
+      <p id="customAlertMessage" class="text-sm font-bold text-slate-600 mb-6 whitespace-pre-line"></p>
+      <button onclick="closeCustomAlert()" class="w-full bg-[#FFC107] border-2 border-[#1A1C23] text-[#1A1C23] font-black py-3 rounded-xl neo-shadow-sm cursor-pointer hover:bg-[#FFD54F]">
+        OK, Got it!
+      </button>
+    </div>
+  </div>
+
+  <!-- JS LOGIC -->
+  <script src="/supabase.js"></script>
+  <script>
+    let allProducts = [];
+    let currentCategory = 'all';
+    let searchQuery = '';
+    let currentUser = null;
+    let isSignUpMode = false;
+    let selectedCheckoutProduct = null;
+    let cart = JSON.parse(localStorage.getItem('cuteovro_cart')) || [];
+    let alertCallback = null;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      lucide.createIcons();
+      updateCartBadge();
+      
+      document.getElementById('kebabMenuBtn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        document.getElementById('kebabDropdown').classList.toggle('hidden');
+      });
+
+      document.addEventListener('click', () => {
+        document.getElementById('kebabDropdown').classList.add('hidden');
+      });
+
+      document.querySelectorAll('.cat-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          document.querySelectorAll('.cat-btn').forEach(b => {
+            b.classList.remove('bg-[#F74571]', 'text-white');
+            b.classList.add('bg-white', 'text-[#1A1C23]');
+          });
+          e.target.classList.add('bg-[#F74571]', 'text-white');
+          e.target.classList.remove('bg-white', 'text-[#1A1C23]');
+          currentCategory = e.target.getAttribute('data-cat');
+          renderProducts();
+        });
+      });
+
+      if(window.BharatDrop) {
+        const res = await window.BharatDrop.fetchProducts();
+        allProducts = res.data || [];
+        renderProducts();
+        checkUserStatus();
+      }
+    });
+
+    function showAppAlert(title, message, icon = '🔔', callback = null) {
+      document.getElementById('customAlertTitle').innerText = title;
+      document.getElementById('customAlertMessage').innerText = message;
+      document.getElementById('customAlertIcon').innerText = icon;
+      alertCallback = callback;
+      document.getElementById('customAlertModal').classList.remove('hidden');
+    }
+
+    function closeCustomAlert() {
+      document.getElementById('customAlertModal').classList.add('hidden');
+      if (alertCallback) {
+        alertCallback();
+        alertCallback = null;
+      }
+    }
+
+    async function checkUserStatus() {
+      if(window.BharatDrop && typeof window.BharatDrop.getCurrentUser === 'function') {
+        const user = await window.BharatDrop.getCurrentUser();
+        currentUser = user;
+        const accTitle = document.getElementById('menuAccountTitle');
+        const accSub = document.getElementById('menuAccountSub');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const logoutDiv = document.getElementById('logoutDivider');
+        
+        if (user) {
+          accTitle.textContent = "My Profile";
+          accSub.textContent = user.email || "Logged In";
+          logoutBtn.classList.remove('hidden');
+          logoutBtn.classList.add('flex');
+          logoutDiv.classList.remove('hidden');
+        } else {
+          accTitle.textContent = "User Account";
+          accSub.textContent = "Login / Sign Up";
+          logoutBtn.classList.add('hidden');
+          logoutBtn.classList.remove('flex');
+          logoutDiv.classList.add('hidden');
+        }
+      }
+    }
+
+    function handleAccountMenuClick() {
+      document.getElementById('kebabDropdown').classList.add('hidden');
+      if (!currentUser) {
+        openAuthModal();
+      } else {
+        showAppAlert("Profile Info", `You are logged in as:\n${currentUser.email}`, "👤");
+      }
+    }
+
+    function handleLogoutClick() {
+      document.getElementById('kebabDropdown').classList.add('hidden');
+      showAppAlert("Logout", "Are you sure you want to log out from your account?", "🚪", () => {
+        window.BharatDrop.signOutCustomer().then(() => location.reload());
+      });
+    }
+
+    function openAuthModal() {
+      document.getElementById('authModal').classList.remove('hidden');
+    }
+    function closeAuthModal() {
+      document.getElementById('authModal').classList.add('hidden');
+    }
+    function toggleAuthMode() {
+      isSignUpMode = !isSignUpMode;
+      document.getElementById('authName').classList.toggle('hidden', !isSignUpMode);
+      document.getElementById('authTitle').innerText = isSignUpMode ? "Create Account" : "Welcome Back";
+      document.getElementById('authSubmitBtn').innerText = isSignUpMode ? "Sign Up" : "Log In";
+      document.getElementById('authToggleBtn').innerText = isSignUpMode ? "Already have an account? Log In" : "Need an account? Sign Up";
+      document.getElementById('authName').required = isSignUpMode;
+    }
+
+    async function loginWithGoogle() {
+      try {
+        const client = window.BharatDrop.initSupabaseClient();
+        if(!client) { showAppAlert("Error", "Database not initialized", "❌"); return; }
+        const { error } = await client.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } });
+        if(error) throw error;
+      } catch (err) { showAppAlert("Login Failed", err.message, "❌"); }
+    }
+
+    async function handleAuthSubmit(e) {
+      e.preventDefault();
+      const email = document.getElementById('authEmail').value;
+      const pass = document.getElementById('authPassword').value;
+      const name = document.getElementById('authName').value;
+      const btn = document.getElementById('authSubmitBtn');
+      btn.innerText = "Please wait...";
+      
+      try {
+        if(isSignUpMode) {
+          const res = await window.BharatDrop.signUpWithEmail(email, pass, name);
+          if(!res.success) throw new Error(res.error);
+          showAppAlert("Success", "Account Created!", "✅");
+        } else {
+          const res = await window.BharatDrop.signInWithEmail(email, pass);
+          if(!res.success) throw new Error(res.error);
+          showAppAlert("Success", "Logged In Successfully!", "✅");
+        }
+        location.reload();
+      } catch(err) {
+        showAppAlert("Authentication Error", err.message, "⚠️");
+        btn.innerText = isSignUpMode ? "Sign Up" : "Log In";
+      }
+    }
+
+    function updateCartBadge() {
+      const badge = document.getElementById('cartBadgeMenu');
+      const totalQty = cart.reduce((sum, item) => sum + item.qty, 0);
+      if (totalQty > 0) {
+        badge.textContent = totalQty;
+        badge.classList.remove('hidden');
+      } else {
+        badge.classList.add('hidden');
+      }
+    }
+
+    function addToCart(id) {
+      const product = allProducts.find(p => p.id === id);
+      if (!product) return;
+      const existing = cart.find(item => item.id === id);
+      if (existing) existing.qty += 1;
+      else cart.push({ ...product, qty: 1 });
+      
+      localStorage.setItem('cuteovro_cart', JSON.stringify(cart));
+      updateCartBadge();
+    }
+
+    function openCartModal() {
+      document.getElementById('kebabDropdown').classList.add('hidden');
+      renderCart();
+      document.getElementById('cartModal').classList.remove('hidden');
+    }
+
+    function closeCartModal() {
+      document.getElementById('cartModal').classList.add('hidden');
+    }
+
+    function removeCartItem(id) {
+      cart = cart.filter(item => item.id !== id);
+      localStorage.setItem('cuteovro_cart', JSON.stringify(cart));
+      updateCartBadge();
+      renderCart();
+    }
+
+    function changeQty(id, delta) {
+      const item = cart.find(i => i.id === id);
+      if (!item) return;
+      item.qty += delta;
+      if (item.qty <= 0) removeCartItem(id);
+      else {
+        localStorage.setItem('cuteovro_cart', JSON.stringify(cart));
+        updateCartBadge();
+        renderCart();
+      }
+    }
+
+    function renderCart() {
+      const container = document.getElementById('cartItemsContainer');
+      let total = 0;
+      
+      if (cart.length === 0) {
+        container.innerHTML = `<div class="text-center py-10"><span class="text-4xl">🛍️</span><p class="font-bold text-slate-500 mt-4">Your cart is empty!</p></div>`;
+      } else {
+        container.innerHTML = cart.map(item => {
+          total += (item.price * item.qty);
+          return `
+            <div class="bg-white border-2 border-[#1A1C23] p-3 rounded-2xl flex items-center gap-4 neo-shadow-sm">
+              <img src="${item.image_url}" class="w-20 h-20 object-cover rounded-xl border border-[#1A1C23]">
+              <div class="flex-1 min-w-0">
+                <h4 class="font-black text-sm text-[#1A1C23] truncate">${item.title}</h4>
+                <p class="text-[#F74571] font-black mt-1">₹${item.price}</p>
+                <div class="flex items-center gap-3 mt-2">
+                  <div class="flex items-center border-2 border-[#1A1C23] rounded-lg overflow-hidden">
+                    <button onclick="changeQty('${item.id}', -1)" class="px-2 bg-[#FFF7D6] font-black hover:bg-[#FFC107] cursor-pointer">-</button>
+                    <span class="px-3 text-xs font-black">${item.qty}</span>
+                    <button onclick="changeQty('${item.id}', 1)" class="px-2 bg-[#FFF7D6] font-black hover:bg-[#FFC107] cursor-pointer">+</button>
+                  </div>
+                  <button onclick="removeCartItem('${item.id}')" class="text-slate-400 hover:text-red-500 cursor-pointer"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+      document.getElementById('cartTotalDisplay').textContent = `₹${total}`;
+      lucide.createIcons();
+    }
+
+    // 🌟 ORDER MODAL LOGIC 🌟
+    function openOrderModal(productId) {
+      const product = allProducts.find(p => p.id === productId);
+      if(!product) return;
+      selectedCheckoutProduct = product;
+      
+      document.getElementById('orderProductId').value = product.id;
+      document.getElementById('orderProductSummary').innerHTML = `
+        <img src="${product.image_url}" class="w-16 h-16 object-cover rounded-xl border-2 border-[#1A1C23]">
+        <div>
+          <h4 class="font-black text-sm text-[#1A1C23]">${product.title}</h4>
+          <p class="text-[#F74571] font-black">₹${product.price}</p>
+        </div>
+      `;
+
+      // 🔴 আপনার আসল UPI ID এখানে বসান (যেমন: 9876543210@ybl)
+      const myRealUpiId = "8509341762@slc"; 
+      const storeName = "cuteOVRO"; 
+
+      const upiUri = window.BharatDrop.generateUpiUri(myRealUpiId, storeName, product.price, 'ORD-NEW');
+      document.getElementById('upiQrImg').src = window.BharatDrop.getQrCodeUrl(upiUri, 160);
+      document.getElementById('upiIdText').textContent = `UPI ID: ${myRealUpiId}`;
+
+      document.getElementById('orderModal').classList.remove('hidden');
+    }
+
+    function closeOrderModal() {
+      document.getElementById('orderModal').classList.add('hidden');
+    }
+
+    function toggleUtrField(mode) {
+      const sec = document.getElementById('upiSection');
+      sec.style.display = mode === 'UPI' ? 'block' : 'none';
+    }
+
+    // 🌟 BUY NOW BUTTON - ONLY OPENS MODAL 🌟
+    function handleBuyNow(id) {
+      if (!currentUser) {
+        openAuthModal();
+        showAppAlert("Login Required", "Please Login to Buy instantly!", "🔒");
+      } else {
+        // ডাইরেক্ট অর্ডার ফর্ম (Address Box) ওপেন হবে
+        openOrderModal(id);
+      }
+    }
+
+    function proceedToCheckout() {
+      if (cart.length === 0) return showAppAlert("Empty Cart", "Your cart is empty!", "⚠️");
+      if (!currentUser) {
+        closeCartModal();
+        openAuthModal();
+        showAppAlert("Login Required", "Please Login to Checkout", "🔒");
+      } else {
+        closeCartModal();
+        openOrderModal(cart[0].id);
+      }
+    }
+
+    async function handleDirectOrderSubmit(e) {
+      e.preventDefault();
+      const btn = document.getElementById('placeOrderBtn');
+      
+      const paymentMode = document.getElementById('custPaymentMode').value;
+      const utrNumber = document.getElementById('custUtr').value.trim();
+
+      if (paymentMode === 'UPI') {
+        if (!utrNumber || utrNumber.length < 12) {
+          showAppAlert("Invalid Payment", "Please enter a valid 12-digit UTR/Reference Number after payment!", "❌");
+          return;
+        }
+      }
+
+      btn.innerText = "Processing Order...";
+      btn.disabled = true;
+
+      const payload = {
+        customer_name: document.getElementById('custName').value.trim(),
+        customer_phone: document.getElementById('custPhone').value.trim(),
+        address_line: document.getElementById('custHouse').value.trim() + ", " + document.getElementById('custRoad').value.trim(),
+        city: document.getElementById('custCity').value.trim(),
+        state: document.getElementById('custState').value.trim(),
+        pincode: document.getElementById('custPincode').value.trim(),
+        product_id: selectedCheckoutProduct.id,
+        product_name: selectedCheckoutProduct.title,
+        variant: "Standard",
+        quantity: 1,
+        total_amount: selectedCheckoutProduct.price,
+        payment_mode: paymentMode,
+        utr_number: utrNumber || "N/A",
+        status: "Pending Verification" 
+      };
+
+      try {
+        const res = await window.BharatDrop.placeOrder(payload);
+        if(res.success) {
+          cart = [];
+          localStorage.removeItem('cuteovro_cart');
+          updateCartBadge();
+          closeOrderModal();
+          
+          showAppAlert("Order Placed! 🎉", `Order ID: ${res.orderCode}\nStatus: Verification Pending.\nWe will check your payment and confirm via WhatsApp shortly.`, "✅", () => {
+            location.reload();
+          });
+        } else {
+          throw new Error("Failed to save order");
+        }
+      } catch(err) {
+        showAppAlert("Error", err.message, "⚠️");
+        btn.innerText = "Place Order Now 🚀";
+        btn.disabled = false;
+      }
+    }
+
+    function openTrackOrderModal() {
+      document.getElementById('kebabDropdown').classList.add('hidden');
+      document.getElementById('trackOrderModal').classList.remove('hidden');
+    }
+
+    function closeTrackOrderModal() {
+      document.getElementById('trackOrderModal').classList.add('hidden');
+    }
+
+    async function searchOrderStatus() {
+      const phone = document.getElementById('trackInput').value.trim();
+      const box = document.getElementById('trackResultBox');
+      
+      if(!phone || phone.length < 10) {
+        showAppAlert("Invalid Input", "Please enter a valid 10-digit phone number.", "⚠️");
+        return;
+      }
+
+      box.innerHTML = `<p class="text-center text-slate-500 py-4">Searching your orders... ⏳</p>`;
+      box.classList.remove('hidden');
+      box.classList.add('flex');
+
+      try {
+        const client = window.BharatDrop.initSupabaseClient();
+        const { data, error } = await client
+          .from('orders')
+          .select('*')
+          .eq('customer_phone', phone)
+          .order('created_at', { ascending: false });
+
+        if(error) throw error;
+
+        if(data && data.length > 0) {
+          box.innerHTML = `<p class="text-center text-[#329688] font-black mb-2 border-b-2 border-slate-200 pb-2">Found ${data.length} Order(s) 🎉</p>` + 
+          data.map(order => `
+            <div class="bg-white border-2 border-[#1A1C23] p-3 rounded-xl shadow-sm mb-2">
+              <div class="flex justify-between items-start mb-2">
+                <span class="text-[#F74571] font-black">${order.order_code}</span>
+                <span class="bg-[#FFF7D6] border border-[#1A1C23] px-2 py-0.5 rounded text-[10px] uppercase font-black text-emerald-700">${order.status}</span>
+              </div>
+              <p class="text-[#1A1C23] text-sm font-bold line-clamp-1">${order.product_name}</p>
+              <div class="flex justify-between items-center mt-2">
+                <p class="text-slate-500 text-[10px]">Date: ${new Date(order.created_at).toLocaleDateString()}</p>
+                <p class="text-[#1A1C23] text-xs font-black">₹${order.total_amount}</p>
+              </div>
+            </div>
+          `).join('');
+        } else {
+          box.innerHTML = `<div class="text-center py-6"><span class="text-4xl">😕</span><br><span class="text-rose-500 mt-3 block text-sm font-bold">No orders found for this number!</span></div>`;
+        }
+      } catch (err) {
+        box.innerHTML = `<span class="text-rose-500 text-center py-4 font-bold">Error connecting to server. Please try again.</span>`;
+        console.error(err);
+      }
+    }
+
+    function filterProducts() {
+      searchQuery = document.getElementById('searchInput').value.toLowerCase();
+      renderProducts();
+    }
+
+    // 🌟 PRODUCT RENDERING 🌟
+    function renderProducts() {
+      const grid = document.getElementById('productGrid');
+      const noResults = document.getElementById('noResultsMsg');
+      
+      const filtered = allProducts.filter(item => {
+        const matchesCategory = currentCategory === 'all' || item.category === currentCategory;
+        const matchesSearch = item.title.toLowerCase().includes(searchQuery);
+        return matchesCategory && matchesSearch;
+      });
+      
+      if (filtered.length === 0) {
+        grid.innerHTML = '';
+        noResults.classList.remove('hidden');
+      } else {
+        noResults.classList.add('hidden');
+        grid.innerHTML = filtered.map(p => `
+          <div class="bg-white border-[3px] border-[#1A1C23] rounded-[2rem] overflow-hidden neo-shadow flex flex-col group">
+            
+            <!-- Image Link to product.html -->
+            <a href="product.html?id=${p.id}" class="block relative aspect-square bg-[#FFF7D6] border-b-[3px] border-[#1A1C23] overflow-hidden cursor-pointer">
+              <img src="${p.image_url}" alt="${p.title}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+              <span class="absolute top-4 left-4 bg-[#FFC107] text-[#1A1C23] text-xs font-black uppercase px-3 py-1 rounded-full border-2 border-[#1A1C23]">${p.category}</span>
+            </a>
+
+            <div class="p-5 flex flex-col flex-1">
+              
+              <!-- Title Link to product.html -->
+              <a href="product.html?id=${p.id}" class="block mb-2 cursor-pointer">
+                <h3 class="font-black text-lg text-[#1A1C23] leading-tight line-clamp-2 hover:text-[#F74571] transition-colors">${p.title}</h3>
+              </a>
+              
+              <div class="flex items-center gap-2 mb-4">
+                <span class="text-2xl font-black text-[#1A1C23]">₹${p.price}</span>
+                ${p.original_price ? `<span class="text-sm font-bold text-slate-400 line-through">₹${p.original_price}</span>` : ''}
+              </div>
+
+              <div class="mt-auto grid grid-cols-2 gap-2 pt-4 border-t-2 border-slate-100">
+                <button onclick="addToCart('${p.id}')" class="bg-[#FFFDF9] border-2 border-[#1A1C23] text-[#1A1C23] font-black text-xs py-3 rounded-xl neo-shadow-sm flex items-center justify-center gap-1 cursor-pointer">
+                  <i data-lucide="shopping-cart" class="w-4 h-4"></i> Add to Cart
+                </button>
+                
+                <!-- 🌟 Buy Now Button -> Opens Address Form (Order Modal) 🌟 -->
+                <button onclick="handleBuyNow('${p.id}')" class="bg-[#329688] border-2 border-[#1A1C23] text-white font-black text-xs py-3 rounded-xl neo-shadow-sm flex items-center justify-center gap-1 cursor-pointer">
+                  Buy Now ⚡
+                </button>
+              </div>
+            </div>
+          </div>
+        `).join('');
+      }
+      lucide.createIcons();
+    }
+  </script>
+</body>
+</html>

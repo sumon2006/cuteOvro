@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth overflow-x-hidden">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+  <title>Product Details - cuteOVRO</title>
+  
+  <!-- Tailwind CSS & Lucide Icons -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- Google Font: Nunito -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { nunito: ['"Nunito"', 'sans-serif'] },
+          colors: {
+            brand: { bg: '#FFFDF9', pink: '#F74571', yellow: '#FFC107', navy: '#1A1C23', teal: '#329688' }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body { font-family: 'Nunito', sans-serif; background-color: #FFFDF9; color: #1A1C23; }
+    .hide-scrollbar::-webkit-scrollbar { display: none; }
+    .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    .neo-shadow { box-shadow: 4px 4px 0px 0px #1A1C23; transition: all 0.2s ease; }
+    .neo-shadow:active { box-shadow: 0px 0px 0px 0px #1A1C23; transform: translate(4px, 4px); }
+    .neo-shadow-sm { box-shadow: 2px 2px 0px 0px #1A1C23; transition: all 0.2s ease; }
+    .neo-shadow-sm:active { box-shadow: 0px 0px 0px 0px #1A1C23; transform: translate(2px, 2px); }
+  </style>
+</head>
+<body class="bg-[#FFFDF9] min-h-screen flex flex-col font-nunito pb-20 md:pb-0">
+
+  <!-- TOP BANNER -->
+  <div class="bg-[#FFC107] border-b-2 border-[#1A1C23] py-2 text-center text-[#1A1C23] font-black text-xs tracking-wider">
+    ✨ ZERO PAYMENT GATEWAY FEES • DIRECT UPI QR • FREE SHIPPING PAN-INDIA ✨
+  </div>
+
+  <!-- HEADER (Same as index.html) -->
+  <header class="sticky top-0 z-40 bg-[#FFFDF9]/95 backdrop-blur-md border-b-2 border-[#1A1C23] w-full">
+    <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+      <a href="index.html" class="flex items-center gap-2 sm:gap-3 group">
+        <div class="w-12 h-12 sm:w-14 sm:h-14 shrink-0 transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-6">
+          <img src="logo (3).png" alt="cuteOVRO Logo" class="w-full h-full object-contain drop-shadow-[2px_2px_0px_#1A1C23]" onerror="this.src='https://placehold.co/100x100?text=LOGO'" />
+        </div>
+        <div class="flex flex-col justify-center">
+          <span class="text-2xl sm:text-3xl font-black tracking-tight text-[#F74571] leading-none">cute<span class="text-[#1A1C23]">OVRO</span></span>
+          <span class="text-[10px] font-bold uppercase tracking-widest text-slate-500 mt-0.5">Shop Your Vibe</span>
+        </div>
+      </a>
+      
+      <!-- Cart Icon -->
+      <button onclick="openCartModal()" class="w-12 h-12 bg-[#F74571] text-white border-2 border-[#1A1C23] rounded-2xl flex items-center justify-center neo-shadow-sm relative cursor-pointer">
+        <i data-lucide="shopping-cart" class="w-6 h-6 stroke-[3]"></i>
+        <span id="cartBadgeMain" class="absolute -top-2 -right-2 bg-[#1A1C23] text-white text-[10px] font-black w-5 h-5 flex items-center justify-center rounded-full border-2 border-white hidden">0</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- BREADCRUMB -->
+  <div class="max-w-7xl mx-auto px-6 py-4 w-full">
+    <p class="text-xs font-bold text-slate-500 flex items-center gap-2">
+      <a href="index.html" class="hover:text-[#F74571]">Home</a> 
+      <i data-lucide="chevron-right" class="w-3 h-3"></i> 
+      <span id="bcCategory" class="hover:text-[#F74571] cursor-pointer">Category</span> 
+      <i data-lucide="chevron-right" class="w-3 h-3"></i> 
+      <span id="bcTitle" class="text-[#1A1C23] truncate w-32 md:w-auto">Product</span>
+    </p>
+  </div>
+
+  <!-- MAIN PRODUCT DETAILS SECTION -->
+  <main class="max-w-7xl mx-auto px-6 py-4 flex-1 w-full">
+    
+    <!-- LOADER -->
+    <div id="loadingState" class="flex flex-col items-center justify-center py-20">
+      <div class="animate-spin rounded-full h-12 w-12 border-b-4 border-[#F74571] mb-4"></div>
+      <p class="font-black text-[#1A1C23]">Loading product details...</p>
+    </div>
+
+    <!-- PRODUCT CONTAINER -->
+    <div id="productContainer" class="hidden grid grid-cols-1 md:grid-cols-2 gap-10">
+      
+      <!-- LEFT: IMAGE GALLERY (Amazon Style) -->
+      <div class="space-y-4">
+        <!-- Main Image -->
+        <div class="bg-white border-4 border-[#1A1C23] rounded-[2rem] aspect-square overflow-hidden neo-shadow relative flex items-center justify-center">
+          <img id="mainProdImage" src="" alt="Product" class="w-full h-full object-cover" />
+          <span id="badgeUI" class="absolute top-4 left-4 bg-[#FFC107] text-[#1A1C23] text-xs font-black uppercase px-3 py-1 rounded-full border-2 border-[#1A1C23] hidden"></span>
+        </div>
+        
+        <!-- Thumbnails (3-4 images) -->
+        <div id="thumbnailContainer" class="flex gap-3 overflow-x-auto hide-scrollbar py-2">
+          <!-- Thumbnails will be injected here -->
+        </div>
+      </div>
+
+      <!-- RIGHT: PRODUCT INFO & ACTION -->
+      <div class="flex flex-col">
+        <h1 id="prodTitle" class="text-3xl md:text-4xl font-black text-[#1A1C23] leading-tight mb-2">Product Title</h1>
+        
+        <div class="flex items-center gap-2 mb-4 text-[#F74571]">
+          <div class="flex text-lg">★★★★<span class="text-slate-300">★</span></div>
+          <a href="#reviewsSection" class="text-xs font-bold text-slate-500 hover:underline">(128 Reviews)</a>
+        </div>
+
+        <div class="flex items-end gap-3 mb-4">
+          <span class="text-4xl font-black text-[#1A1C23]" id="prodPrice">₹0</span>
+          <span class="text-lg font-bold text-slate-400 line-through mb-1" id="prodOrigPrice"></span>
+          <span class="bg-[#329688] text-white text-xs font-black px-2 py-1 rounded-lg border-2 border-[#1A1C23] mb-1 neo-shadow-sm" id="discountBadge">Save %</span>
+        </div>
+
+        <div class="bg-[#FFF7D6] border-2 border-[#1A1C23] rounded-2xl p-4 mb-6 neo-shadow-sm">
+          <ul class="text-sm font-bold text-slate-700 space-y-2">
+            <li class="flex gap-2"><span>✅</span> In Stock & Ready to Ship</li>
+            <li class="flex gap-2"><span>🚚</span> Free Delivery across India</li>
+            <li class="flex gap-2"><span>💳</span> UPI QR & Cash on Delivery Available</li>
+          </ul>
+        </div>
+
+        <!-- Size Selection -->
+        <div class="mb-6">
+          <p class="text-sm font-black text-[#1A1C23] mb-2">Select Size:</p>
+          <div class="flex gap-3">
+            <button class="size-btn active bg-[#1A1C23] text-white border-2 border-[#1A1C23] w-12 h-12 rounded-xl font-black neo-shadow-sm transition-colors">S</button>
+            <button class="size-btn bg-white text-[#1A1C23] border-2 border-[#1A1C23] w-12 h-12 rounded-xl font-black neo-shadow-sm hover:bg-slate-100 transition-colors">M</button>
+            <button class="size-btn bg-white text-[#1A1C23] border-2 border-[#1A1C23] w-12 h-12 rounded-xl font-black neo-shadow-sm hover:bg-slate-100 transition-colors">L</button>
+            <button class="size-btn bg-white text-[#1A1C23] border-2 border-[#1A1C23] w-12 h-12 rounded-xl font-black neo-shadow-sm hover:bg-slate-100 transition-colors">XL</button>
+          </div>
+        </div>
+
+        <!-- Description -->
+        <div class="mb-8">
+          <p class="text-sm font-black text-[#1A1C23] mb-2">Product Description:</p>
+          <p id="prodDesc" class="text-sm font-bold text-slate-600 leading-relaxed">Description goes here.</p>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex flex-col sm:flex-row gap-4 mt-auto">
+          <button id="addToCartBtn" class="flex-1 bg-white border-4 border-[#1A1C23] text-[#1A1C23] font-black text-lg py-4 rounded-2xl neo-shadow flex items-center justify-center gap-2 hover:bg-[#FFF7D6] transition-colors cursor-pointer">
+            <i data-lucide="shopping-cart" class="w-5 h-5"></i> Add to Cart
+          </button>
+          <button id="buyNowBtn" class="flex-1 bg-[#329688] border-4 border-[#1A1C23] text-white font-black text-lg py-4 rounded-2xl neo-shadow flex items-center justify-center gap-2 hover:bg-[#287a6e] transition-colors cursor-pointer">
+            Buy Now ⚡
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- REVIEWS SECTION -->
+    <div id="reviewsSection" class="mt-20 pt-10 border-t-4 border-[#1A1C23] hidden">
+      <div class="flex items-center gap-4 mb-8">
+        <h2 class="text-2xl md:text-3xl font-black text-[#1A1C23]">Customer Reviews</h2>
+        <span class="bg-[#F74571] text-white px-3 py-1 rounded-full text-sm font-black border-2 border-[#1A1C23]">4.2 / 5</span>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-10">
+        <!-- Write Review Form -->
+        <div class="col-span-1 bg-white border-4 border-[#1A1C23] rounded-3xl p-6 neo-shadow-sm h-fit">
+          <h3 class="text-lg font-black text-[#1A1C23] mb-4">Write a Review ✍️</h3>
+          <form onsubmit="submitReview(event)" class="space-y-4">
+            <div>
+              <input type="text" id="revName" required placeholder="Your Name" class="w-full bg-[#FFFDF9] border-2 border-[#1A1C23] rounded-xl px-4 py-3 text-sm font-bold" />
+            </div>
+            <div>
+              <select id="revRating" class="w-full bg-[#FFFDF9] border-2 border-[#1A1C23] rounded-xl px-4 py-3 text-sm font-bold text-[#FFC107]">
+                <option value="5">⭐⭐⭐⭐⭐ (5/5)</option>
+                <option value="4">⭐⭐⭐⭐ (4/5)</option>
+                <option value="3">⭐⭐⭐ (3/5)</option>
+                <option value="2">⭐⭐ (2/5)</option>
+                <option value="1">⭐ (1/5)</option>
+              </select>
+            </div>
+            <div>
+              <textarea id="revText" required rows="3" placeholder="What did you like about this product?" class="w-full bg-[#FFFDF9] border-2 border-[#1A1C23] rounded-xl px-4 py-3 text-sm font-bold"></textarea>
+            </div>
+            <button type="submit" class="w-full bg-[#FFC107] border-2 border-[#1A1C23] text-[#1A1C23] font-black py-3 rounded-xl neo-shadow-sm cursor-pointer">Submit Review</button>
+          </form>
+        </div>
+
+        <!-- Review List -->
+        <div class="col-span-1 md:col-span-2 space-y-4" id="reviewsList">
+          <!-- Dummy Reviews (Will be prepended here) -->
+          <div class="bg-white border-2 border-[#1A1C23] rounded-2xl p-5 neo-shadow-sm">
+            <div class="flex justify-between items-start mb-2">
+              <div>
+                <p class="font-black text-[#1A1C23]">Rahul Sharma</p>
+                <p class="text-[10px] font-bold text-slate-400">Verified Buyer</p>
+              </div>
+              <div class="text-[#FFC107] text-sm">⭐⭐⭐⭐⭐</div>
+            </div>
+            <p class="text-sm font-bold text-slate-600">Awesome quality! The material is very soft and it fits perfectly. Will definitely buy again from cuteOVRO.</p>
+          </div>
+
+          <div class="bg-white border-2 border-[#1A1C23] rounded-2xl p-5 neo-shadow-sm">
+            <div class="flex justify-between items-start mb-2">
+              <div>
+                <p class="font-black text-[#1A1C23]">Priya Das</p>
+                <p class="text-[10px] font-bold text-slate-400">Verified Buyer</p>
+              </div>
+              <div class="text-[#FFC107] text-sm">⭐⭐⭐⭐</div>
+            </div>
+            <p class="text-sm font-bold text-slate-600">Product is exactly as shown in the picture. Delivery was very fast within 3 days.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PRODUCT RECOMMENDATIONS -->
+    <div id="recommendationsSection" class="mt-20 pt-10 border-t-4 border-[#1A1C23] hidden">
+      <h2 class="text-2xl md:text-3xl font-black text-[#1A1C23] mb-8">You might also like 🔥</h2>
+      <div id="recommendGrid" class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8">
+        <!-- Related products injected here -->
+      </div>
+    </div>
+
+  </main>
+
+  <!-- CART MODAL (Same as index.html) -->
+  <div id="cartModal" class="fixed inset-0 z-50 bg-[#1A1C23]/80 backdrop-blur-sm hidden flex items-center justify-center p-4 lg:justify-end lg:p-0">
+    <div class="bg-white lg:rounded-l-3xl lg:rounded-r-none rounded-3xl w-full max-w-lg lg:h-screen lg:max-h-screen max-h-[90vh] border-4 lg:border-r-0 border-[#1A1C23] shadow-[8px_8px_0px_0px_#1A1C23] flex flex-col relative overflow-hidden">
+      <div class="bg-[#F74571] border-b-2 border-[#1A1C23] p-5 flex items-center justify-between shrink-0">
+        <h2 class="text-2xl font-black text-white flex items-center gap-2">🛒 My Cart</h2>
+        <button onclick="closeCartModal()" class="w-10 h-10 bg-white border-2 border-[#1A1C23] rounded-xl flex items-center justify-center font-black neo-shadow-sm text-[#1A1C23] cursor-pointer">X</button>
+      </div>
+      <div id="cartItemsContainer" class="flex-1 overflow-y-auto p-6 flex flex-col gap-4 bg-[#FFFDF9]"></div>
+      <div class="bg-white border-t-2 border-[#1A1C23] p-6 shrink-0">
+        <div class="flex justify-between items-center mb-4">
+          <span class="text-lg font-bold text-slate-600">Total Payable:</span>
+          <span id="cartTotalDisplay" class="text-3xl font-black text-[#1A1C23]">₹0</span>
+        </div>
+        <button onclick="proceedToCheckout()" class="w-full bg-[#329688] border-2 border-[#1A1C23] text-white rounded-2xl py-4 text-xl font-black neo-shadow cursor-pointer">Proceed to Checkout ⚡</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- DIRECT ORDER MODAL (Address Form - Same as index.html) -->
+  <div id="orderModal" class="fixed inset-0 z-50 bg-[#1A1C23]/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-lg w-full border-4 border-[#1A1C23] shadow-[8px_8px_0px_0px_#1A1C23] overflow-hidden flex flex-col relative max-h-[90vh]">
+      <div class="bg-[#329688] text-white p-5 border-b-2 border-[#1A1C23] flex items-center justify-between">
+        <h3 class="text-xl font-black">Complete Your Order ⚡</h3>
+        <button onclick="closeOrderModal()" class="w-8 h-8 bg-white text-[#1A1C23] border-2 border-[#1A1C23] rounded-xl font-black cursor-pointer">X</button>
+      </div>
+      <div class="p-6 overflow-y-auto space-y-4">
+        <div id="orderProductSummary" class="bg-[#FFF7D6] border-2 border-[#1A1C23] p-3 rounded-2xl flex items-center gap-3"></div>
+        <form id="orderForm" onsubmit="handleDirectOrderSubmit(event)" class="space-y-3">
+          <input type="hidden" id="orderProductId" />
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-black text-slate-700 mb-1">Full Name *</label>
+              <input type="text" id="custName" required placeholder="Sumon Pal" class="w-full bg-[#FFFDF9] border-2 border-[#1A1C23] rounded-xl px-3 py-2 text-sm font-bold" />
+            </div>
+            <div>
+              <label class="block text-xs font-black text-slate-700 mb-1">WhatsApp No. *</label>
+              <input type="tel" id="custPhone" required placeholder="9876543210" class="w-full bg-[#FFFDF9] border-2 border-[#1A1C23] rounded-xl px-3 py-2 text-sm font-bold" />
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-black text-slate-700 mb-1">House no. / Building name *</label>
+            <input type="text" id="custHouse" required placeholder="Flat 4B, Sunrise Apartment" class="w-full bg-[#FFFDF9] border-2 border-[#1A1C23] rounded-xl px-3 py-2 text-sm font-bold" />
+          </div>
+          <div>
+            <label class="block text-xs font-black text-slate-700 mb-1">Road name / Area / Colony *</label>
+            <input type="text" id="custRoad" required placeholder="MG Road, Sector 5" class="w-full bg-[#FFFDF9] border-2 border-[#1A1C23] rounded-xl px-3 py-2 text-sm font-bold" />
+          </div>
+          <div class="grid grid-cols-3 gap-3">
+            <div>
+              <label class="block text-xs font-black text-slate-700 mb-1">Pincode *</label>
+              <input type="text" id="custPincode" required placeholder="700001" class="w-full bg-[#FFFDF9] border-2 border-[#1A1C23] rounded-xl px-3 py-2 text-sm font-bold" />
+            </div>
+            <div>
+              <label class="block text-xs font-black text-slate-700 mb-1">City *</label>
+              <input type="text" id="custCity" required placeholder="Kolkata" class="w-full bg-[#FFFDF9] border-2 border-[#1A1C23] rounded-xl px-3 py-2 text-sm font-bold" />
+            </div>
+            <div>
+              <label class="block text-xs font-black text-slate-700 mb-1">State *</label>
+              <input type="text" id="custState" required placeholder="West Bengal" class="w-full bg-[#FFFDF9] border-2 border-[#1A1C23] rounded-xl px-3 py-2 text-sm font-bold" />
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-black text-slate-700 mb-1">Payment Mode *</label>
+            <select id="custPaymentMode" onchange="toggleUtrField(this.value)" class="w-full bg-[#FFFDF9] border-2 border-[#1A1C23] rounded-xl px-3 py-2 text-sm font-bold">
+              <option value="UPI">✨ UPI QR (0% Fees - Instant Verify)</option>
+              <option value="COD">💵 Cash on Delivery</option>
+            </select>
+          </div>
+          <div id="upiSection" class="p-3 bg-[#FFF7D6] border-2 border-[#1A1C23] rounded-xl space-y-2">
+            <p class="text-xs font-bold text-slate-800">Scan & Pay via UPI:</p>
+            <div class="text-center">
+              <img id="upiQrImg" src="" alt="UPI QR" class="w-32 h-32 mx-auto border-2 border-[#1A1C23] rounded-lg bg-white" />
+              <p id="upiIdText" class="text-xs font-black text-[#F74571] mt-1"></p>
+            </div>
+            <input type="text" id="custUtr" placeholder="Enter 12-digit UTR / UPI Ref No." class="w-full bg-white border-2 border-[#1A1C23] rounded-xl px-3 py-2 text-xs font-bold" />
+          </div>
+          <button type="submit" id="placeOrderBtn" class="w-full bg-[#329688] border-2 border-[#1A1C23] text-white font-black py-3 rounded-2xl neo-shadow text-base mt-2 cursor-pointer">
+            Place Order Now 🚀
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- CUSTOM APP UI ALERT -->
+  <div id="customAlertModal" class="fixed inset-0 z-[60] bg-[#1A1C23]/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-sm w-full border-4 border-[#1A1C23] shadow-[8px_8px_0px_0px_#1A1C23] overflow-hidden flex flex-col p-6 text-center transform transition-transform">
+      <div id="customAlertIcon" class="text-5xl mb-4">🔔</div>
+      <h3 id="customAlertTitle" class="text-xl font-black text-[#1A1C23] mb-2 leading-tight">Message</h3>
+      <p id="customAlertMessage" class="text-sm font-bold text-slate-600 mb-6 whitespace-pre-line"></p>
+      <button onclick="closeCustomAlert()" class="w-full bg-[#FFC107] border-2 border-[#1A1C23] text-[#1A1C23] font-black py-3 rounded-xl neo-shadow-sm cursor-pointer hover:bg-[#FFD54F]">
+        OK, Got it!
+      </button>
+    </div>
+  </div>
+
+  <script src="/supabase.js"></script>
+  <script>
+    let allProducts = [];
+    let currentProduct = null;
+    let selectedVariant = 'S';
+    let cart = JSON.parse(localStorage.getItem('cuteovro_cart')) || [];
+    let alertCallback = null;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      lucide.createIcons();
+      updateCartBadge();
+      
+      // Get ID from URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const productId = urlParams.get('id');
+
+      if (!productId) {
+        window.location.href = 'index.html';
+        return;
+      }
+
+      // Fetch Data
+      if(window.BharatDrop) {
+        const res = await window.BharatDrop.fetchProducts();
+        allProducts = res.data || [];
+        
+        currentProduct = allProducts.find(p => p.id === productId);
+        if(!currentProduct) {
+          showAppAlert("Error", "Product not found!", "❌", () => { window.location.href = 'index.html'; });
+          return;
+        }
+
+        renderProductDetails();
+        renderRecommendations();
+      }
+    });
+
+    // 🌟 Render Product Details 🌟
+    function renderProductDetails() {
+      document.getElementById('loadingState').classList.add('hidden');
+      document.getElementById('productContainer').classList.remove('hidden');
+      document.getElementById('reviewsSection').classList.remove('hidden');
+      document.getElementById('recommendationsSection').classList.remove('hidden');
+
+      // Breadcrumb
+      document.getElementById('bcCategory').innerText = currentProduct.category;
+      document.getElementById('bcTitle').innerText = currentProduct.title;
+
+      // Text Info
+      document.getElementById('prodTitle').innerText = currentProduct.title;
+      document.getElementById('prodPrice').innerText = `₹${currentProduct.price}`;
+      document.getElementById('prodDesc').innerText = currentProduct.description || "Premium quality product. Designed for best comfort and durability.";
+      
+      if(currentProduct.original_price && currentProduct.original_price > currentProduct.price) {
+        document.getElementById('prodOrigPrice').innerText = `₹${currentProduct.original_price}`;
+        let discount = Math.round(((currentProduct.original_price - currentProduct.price) / currentProduct.original_price) * 100);
+        document.getElementById('discountBadge').innerText = `Save ${discount}%`;
+      } else {
+        document.getElementById('prodOrigPrice').style.display = 'none';
+        document.getElementById('discountBadge').style.display = 'none';
+      }
+
+      // Gallery Images (If no gallery in DB, creating 3 dummy copies of main image for UI feel)
+      let images = [];
+      try {
+        images = JSON.parse(currentProduct.image_gallery || "[]");
+      } catch(e) {}
+      
+      if(images.length === 0) {
+        // Fallback Gallery
+        images = [
+          currentProduct.image_url, 
+          'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?auto=format&fit=crop&w=400&q=80',
+          'https://images.unsplash.com/photo-1542272604-787c3835535d?auto=format&fit=crop&w=400&q=80'
+        ];
+      } else {
+        images.unshift(currentProduct.image_url); // Add main to front
+      }
+
+      document.getElementById('mainProdImage').src = images[0];
+      
+      const thumbBox = document.getElementById('thumbnailContainer');
+      thumbBox.innerHTML = images.map(img => `
+        <button onclick="changeMainImage('${img}')" class="w-20 h-20 shrink-0 bg-white border-2 border-[#1A1C23] rounded-xl overflow-hidden cursor-pointer neo-shadow-sm hover:scale-105 transition-transform">
+          <img src="${img}" class="w-full h-full object-cover">
+        </button>
+      `).join('');
+
+      // Buttons Action
+      document.getElementById('addToCartBtn').onclick = () => { addToCart(currentProduct.id); };
+      document.getElementById('buyNowBtn').onclick = () => { openOrderModal(currentProduct.id); };
+      
+      // Size Selection UI Setup
+      document.querySelectorAll('.size-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          document.querySelectorAll('.size-btn').forEach(b => {
+            b.classList.remove('bg-[#1A1C23]', 'text-white');
+            b.classList.add('bg-white', 'text-[#1A1C23]');
+          });
+          e.target.classList.add('bg-[#1A1C23]', 'text-white');
+          e.target.classList.remove('bg-white', 'text-[#1A1C23]');
+          selectedVariant = e.target.innerText;
+        });
+      });
+    }
+
+    function changeMainImage(src) {
+      document.getElementById('mainProdImage').src = src;
+    }
+
+    // 🌟 Render Related Products 🌟
+    function renderRecommendations() {
+      // Filter out current product, match category if possible, take top 4
+      const related = allProducts.filter(p => p.id !== currentProduct.id && p.category === currentProduct.category).slice(0, 4);
+      const fallback = allProducts.filter(p => p.id !== currentProduct.id).slice(0, 4);
+      
+      const toShow = related.length > 0 ? related : fallback;
+      
+      const grid = document.getElementById('recommendGrid');
+      grid.innerHTML = toShow.map(p => `
+        <div class="bg-white border-[3px] border-[#1A1C23] rounded-2xl overflow-hidden neo-shadow-sm flex flex-col group">
+          <a href="product.html?id=${p.id}" class="block relative aspect-square bg-[#FFF7D6] border-b-[3px] border-[#1A1C23] overflow-hidden cursor-pointer">
+            <img src="${p.image_url}" alt="${p.title}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+          </a>
+          <div class="p-4 flex flex-col flex-1">
+            <a href="product.html?id=${p.id}" class="block mb-2 cursor-pointer">
+              <h3 class="font-black text-sm text-[#1A1C23] leading-tight line-clamp-2 hover:text-[#F74571] transition-colors">${p.title}</h3>
+            </a>
+            <div class="mt-auto">
+              <span class="text-lg font-black text-[#1A1C23]">₹${p.price}</span>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // 🌟 Review Submit Logic 🌟
+    function submitReview(e) {
+      e.preventDefault();
+      const name = document.getElementById('revName').value;
+      const rating = document.getElementById('revRating').value;
+      const text = document.getElementById('revText').value;
+
+      let stars = "⭐".repeat(rating);
+      
+      const newReviewHTML = `
+        <div class="bg-[#FFF7D6] border-2 border-[#1A1C23] rounded-2xl p-5 neo-shadow-sm mb-4">
+          <div class="flex justify-between items-start mb-2">
+            <div>
+              <p class="font-black text-[#1A1C23]">${name} <span class="bg-[#F74571] text-white text-[9px] px-1.5 py-0.5 rounded uppercase">New</span></p>
+            </div>
+            <div class="text-[#FFC107] text-sm">${stars}</div>
+          </div>
+          <p class="text-sm font-bold text-slate-700">${text}</p>
+        </div>
+      `;
+      
+      // Prepend to list
+      document.getElementById('reviewsList').insertAdjacentHTML('afterbegin', newReviewHTML);
+      
+      showAppAlert("Review Added!", "Thank you for your feedback.", "⭐");
+      e.target.reset();
+    }
+
+    // ==========================================
+    // RE-USED LOGIC (Cart, Order, Alert)
+    // ==========================================
+    function showAppAlert(title, message, icon = '🔔', callback = null) {
+      document.getElementById('customAlertTitle').innerText = title;
+      document.getElementById('customAlertMessage').innerText = message;
+      document.getElementById('customAlertIcon').innerText = icon;
+      alertCallback = callback;
+      document.getElementById('customAlertModal').classList.remove('hidden');
+    }
+
+    function closeCustomAlert() {
+      document.getElementById('customAlertModal').classList.add('hidden');
+      if (alertCallback) { alertCallback(); alertCallback = null; }
+    }
+
+    function updateCartBadge() {
+      const badge = document.getElementById('cartBadgeMain');
+      const totalQty = cart.reduce((sum, item) => sum + item.qty, 0);
+      if (totalQty > 0) {
+        badge.textContent = totalQty;
+        badge.classList.remove('hidden');
+      } else {
+        badge.classList.add('hidden');
+      }
+    }
+
+    function addToCart(id) {
+      const product = allProducts.find(p => p.id === id);
+      if (!product) return;
+      const existing = cart.find(item => item.id === id);
+      if (existing) existing.qty += 1;
+      else cart.push({ ...product, qty: 1 });
+      
+      localStorage.setItem('cuteovro_cart', JSON.stringify(cart));
+      updateCartBadge();
+      showAppAlert("Cart Updated", `${product.title} added to cart!`, "🛒");
+    }
+
+    function openCartModal() {
+      renderCart();
+      document.getElementById('cartModal').classList.remove('hidden');
+    }
+    function closeCartModal() { document.getElementById('cartModal').classList.add('hidden'); }
+    
+    function removeCartItem(id) {
+      cart = cart.filter(item => item.id !== id);
+      localStorage.setItem('cuteovro_cart', JSON.stringify(cart));
+      updateCartBadge();
+      renderCart();
+    }
+    function changeQty(id, delta) {
+      const item = cart.find(i => i.id === id);
+      if (!item) return;
+      item.qty += delta;
+      if (item.qty <= 0) removeCartItem(id);
+      else {
+        localStorage.setItem('cuteovro_cart', JSON.stringify(cart));
+        updateCartBadge();
+        renderCart();
+      }
+    }
+
+    function renderCart() {
+      const container = document.getElementById('cartItemsContainer');
+      let total = 0;
+      if (cart.length === 0) {
+        container.innerHTML = `<div class="text-center py-10"><span class="text-4xl">🛍️</span><p class="font-bold text-slate-500 mt-4">Your cart is empty!</p></div>`;
+      } else {
+        container.innerHTML = cart.map(item => {
+          total += (item.price * item.qty);
+          return `
+            <div class="bg-white border-2 border-[#1A1C23] p-3 rounded-2xl flex items-center gap-4 neo-shadow-sm">
+              <img src="${item.image_url}" class="w-20 h-20 object-cover rounded-xl border border-[#1A1C23]">
+              <div class="flex-1 min-w-0">
+                <h4 class="font-black text-sm text-[#1A1C23] truncate">${item.title}</h4>
+                <p class="text-[#F74571] font-black mt-1">₹${item.price}</p>
+                <div class="flex items-center gap-3 mt-2">
+                  <div class="flex items-center border-2 border-[#1A1C23] rounded-lg overflow-hidden">
+                    <button onclick="changeQty('${item.id}', -1)" class="px-2 bg-[#FFF7D6] font-black cursor-pointer">-</button>
+                    <span class="px-3 text-xs font-black">${item.qty}</span>
+                    <button onclick="changeQty('${item.id}', 1)" class="px-2 bg-[#FFF7D6] font-black cursor-pointer">+</button>
+                  </div>
+                  <button onclick="removeCartItem('${item.id}')" class="text-slate-400 hover:text-red-500 cursor-pointer"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+      document.getElementById('cartTotalDisplay').textContent = `₹${total}`;
+      lucide.createIcons();
+    }
+
+    let selectedCheckoutProduct = null;
+    function openOrderModal(productId) {
+      const product = allProducts.find(p => p.id === productId);
+      if(!product) return;
+      selectedCheckoutProduct = product;
+      
+      document.getElementById('orderProductId').value = product.id;
+      document.getElementById('orderProductSummary').innerHTML = `
+        <img src="${product.image_url}" class="w-16 h-16 object-cover rounded-xl border-2 border-[#1A1C23]">
+        <div>
+          <h4 class="font-black text-sm text-[#1A1C23]">${product.title} (Size: ${selectedVariant})</h4>
+          <p class="text-[#F74571] font-black">₹${product.price}</p>
+        </div>
+      `;
+
+      // 🔴 আপনার আসল UPI ID এখানে বসান
+      const myRealUpiId = "your_real_upi_id_here@upi"; 
+      const storeName = "cuteOVRO"; 
+
+      const upiUri = window.BharatDrop.generateUpiUri(myRealUpiId, storeName, product.price, 'ORD-NEW');
+      document.getElementById('upiQrImg').src = window.BharatDrop.getQrCodeUrl(upiUri, 160);
+      document.getElementById('upiIdText').textContent = `UPI ID: ${myRealUpiId}`;
+
+      document.getElementById('orderModal').classList.remove('hidden');
+    }
+
+    function closeOrderModal() { document.getElementById('orderModal').classList.add('hidden'); }
+    function toggleUtrField(mode) { document.getElementById('upiSection').style.display = mode === 'UPI' ? 'block' : 'none'; }
+    function proceedToCheckout() {
+      if (cart.length === 0) return showAppAlert("Empty Cart", "Your cart is empty!", "⚠️");
+      closeCartModal();
+      openOrderModal(cart[0].id);
+    }
+
+    async function handleDirectOrderSubmit(e) {
+      e.preventDefault();
+      const btn = document.getElementById('placeOrderBtn');
+      const paymentMode = document.getElementById('custPaymentMode').value;
+      const utrNumber = document.getElementById('custUtr').value.trim();
+
+      if (paymentMode === 'UPI') {
+        if (!utrNumber || utrNumber.length < 12) {
+          showAppAlert("Invalid Payment", "Please enter a valid 12-digit UTR/Reference Number after payment!", "❌");
+          return;
+        }
+      }
+
+      btn.innerText = "Processing Order...";
+      btn.disabled = true;
+
+      const payload = {
+        customer_name: document.getElementById('custName').value.trim(),
+        customer_phone: document.getElementById('custPhone').value.trim(),
+        address_line: document.getElementById('custHouse').value.trim() + ", " + document.getElementById('custRoad').value.trim(),
+        city: document.getElementById('custCity').value.trim(),
+        state: document.getElementById('custState').value.trim(),
+        pincode: document.getElementById('custPincode').value.trim(),
+        product_id: selectedCheckoutProduct.id,
+        product_name: selectedCheckoutProduct.title,
+        variant: selectedVariant, // Passing selected size
+        quantity: 1,
+        total_amount: selectedCheckoutProduct.price,
+        payment_mode: paymentMode,
+        utr_number: utrNumber || "N/A",
+        status: "Pending Verification" 
+      };
+
+      try {
+        const res = await window.BharatDrop.placeOrder(payload);
+        if(res.success) {
+          cart = [];
+          localStorage.removeItem('cuteovro_cart');
+          updateCartBadge();
+          closeOrderModal();
+          showAppAlert("Order Placed! 🎉", `Order ID: ${res.orderCode}\nStatus: Verification Pending.`, "✅", () => { location.reload(); });
+        } else {
+          throw new Error("Failed to save order");
+        }
+      } catch(err) {
+        showAppAlert("Error", err.message, "⚠️");
+        btn.innerText = "Place Order Now 🚀";
+        btn.disabled = false;
+      }
+    }
+  </script>
+</body>
+</html>

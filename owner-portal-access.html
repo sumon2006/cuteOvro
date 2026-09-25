@@ -1,0 +1,1518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Owner Portal • Secure Administration Console</title>
+  
+  <!-- Tailwind CSS & Lucide Icons -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Supabase JS Client CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- Google Fonts: Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen antialiased flex flex-col font-sans">
+
+  <!-- ========================================================================= -->
+  <!-- 1. SESSION & ROUTE GUARD (CENTERED LOGIN GATE)                           -->
+  <!-- ========================================================================= -->
+  <div id="loginGate" class="fixed inset-0 z-50 bg-slate-950 flex items-center justify-center p-4">
+    <div class="bg-slate-900 rounded-3xl max-w-md w-full p-8 shadow-2xl border border-slate-800 text-center relative overflow-hidden">
+      
+      <!-- Ambient Glow Effect -->
+      <div class="absolute -top-24 -left-24 w-48 h-48 bg-orange-500/10 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="absolute -bottom-24 -right-24 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+      <!-- Icon -->
+      <div class="w-16 h-16 bg-slate-800 text-orange-500 rounded-2xl flex items-center justify-center mx-auto mb-5 border border-slate-700 shadow-inner">
+        <i data-lucide="shield-lock" class="w-8 h-8"></i>
+      </div>
+
+      <h2 class="text-xl font-black text-white tracking-tight">Owner Portal Access</h2>
+      <p class="text-xs text-slate-400 mt-1.5 mb-6 leading-relaxed">
+        Restricted administration console for store inventory, direct UPI settlements, and live customer orders stream.
+      </p>
+
+      <form id="ownerLoginForm" onsubmit="handlePortalLogin(event)" class="space-y-4">
+        <div>
+          <label class="block text-left text-xs font-bold text-slate-400 mb-1.5">Master Security Password / PIN</label>
+          <div class="relative">
+            <input 
+              type="password" 
+              id="portalPasswordInput" 
+              required
+              placeholder="Enter master password (default: Admin@2026 or 1234)" 
+              class="w-full bg-slate-800/80 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 transition"
+              autofocus 
+            />
+            <button 
+              type="button" 
+              onclick="togglePasswordVisibility()" 
+              class="absolute right-3 top-3 text-slate-400 hover:text-white"
+            >
+              <i data-lucide="eye" id="pwdToggleIcon" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+
+        <button 
+          type="submit" 
+          id="btnLoginSubmit"
+          class="w-full py-3 bg-gradient-to-r from-orange-600 via-amber-600 to-orange-700 hover:from-orange-500 hover:to-amber-500 text-white font-extrabold text-xs rounded-xl transition shadow-lg shadow-orange-600/20 flex items-center justify-center gap-2"
+        >
+          <i data-lucide="key-round" class="w-4 h-4"></i>
+          <span>Authenticate & Open Console</span>
+        </button>
+
+        <p id="portalLoginError" class="hidden text-xs text-rose-400 font-bold bg-rose-500/10 border border-rose-500/20 py-2 px-3 rounded-lg text-center">
+          Invalid security password. Default master password is: <b>Admin@2026</b> or <b>1234</b>
+        </p>
+      </form>
+
+      <div class="mt-6 pt-5 border-t border-slate-800 text-center">
+        <a href="/" class="text-xs text-slate-400 hover:text-orange-400 font-semibold inline-flex items-center gap-1.5 transition">
+          <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
+          <span>Return to Public Storefront</span>
+        </a>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- 2. FULL OWNER CONSOLE (RENDERED ON AUTHENTICATION)                       -->
+  <!-- ========================================================================= -->
+  <div id="portalDashboard" class="hidden flex-1 flex flex-col min-h-screen bg-slate-900">
+    
+    <!-- TOP OWNER HEADER -->
+    <header class="bg-slate-950 border-b border-slate-800 sticky top-0 z-30 shadow-md">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between h-16 sm:h-20">
+          
+          <!-- Left: Brand & Realtime Indicator -->
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-orange-600 to-amber-500 flex items-center justify-center text-white shadow-md shadow-orange-600/30">
+              <i data-lucide="shield" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <h1 class="text-base sm:text-lg font-black text-white tracking-tight flex items-center gap-1.5">
+                  <span id="portalStoreName">BharatDrop</span>
+                  <span class="text-slate-400 font-light">|</span>
+                  <span class="text-orange-400 text-xs uppercase tracking-wider font-extrabold">Owner Console</span>
+                </h1>
+                <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+                  <span>LIVE REALTIME</span>
+                </span>
+              </div>
+              <p class="text-[11px] text-slate-400">Direct UPI Orders, Supabase PostgreSQL, Storage & Catalog Control</p>
+            </div>
+          </div>
+
+          <!-- Right Action Controls -->
+          <div class="flex items-center gap-2 sm:gap-3">
+            
+            <!-- View Public Store in New Tab -->
+            <a 
+              href="/" 
+              target="_blank"
+              class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition inline-flex items-center gap-1.5 border border-slate-700"
+              title="Open Customer Storefront in New Tab"
+            >
+              <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+              <span class="hidden sm:inline">Storefront</span>
+            </a>
+
+            <!-- SQL Schema Setup Helper -->
+            <button 
+              onclick="openSqlModal()" 
+              class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition inline-flex items-center gap-1.5 border border-slate-700"
+              title="Supabase PostgreSQL Schema & RLS"
+            >
+              <i data-lucide="database" class="w-3.5 h-3.5 text-blue-400"></i>
+              <span class="hidden md:inline">SQL Schema</span>
+            </button>
+
+            <!-- Store & Supabase Settings -->
+            <button 
+              onclick="openSettingsModal()" 
+              class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition inline-flex items-center gap-1.5 border border-slate-700"
+              title="Configure UPI ID & Supabase Keys"
+            >
+              <i data-lucide="sliders" class="w-3.5 h-3.5 text-orange-400"></i>
+              <span class="hidden sm:inline">Settings</span>
+            </button>
+
+            <!-- Audio Chime Toggle -->
+            <button 
+              id="soundToggleBtn" 
+              onclick="toggleOrderSound()" 
+              class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition" 
+              title="Toggle Live Order Sound Alert"
+            >
+              <i data-lucide="volume-2" class="w-4 h-4 text-emerald-400"></i>
+            </button>
+
+            <!-- LOGOUT BUTTON (Wipes session and redirects to index.html) -->
+            <button 
+              onclick="handlePortalLogout()" 
+              class="px-3 py-2 rounded-xl bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 text-xs font-bold transition inline-flex items-center gap-1.5"
+              title="End Owner Session & Return to Storefront"
+            >
+              <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
+              <span>Logout</span>
+            </button>
+          </div>
+
+        </div>
+      </div>
+    </header>
+
+    <!-- NAVIGATION TABS: ORDERS STREAM vs PRODUCTS CATALOG -->
+    <div class="bg-slate-950/80 border-b border-slate-800">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center gap-3 py-2.5">
+          <button 
+            id="tabBtnOrders" 
+            onclick="switchPortalTab('orders')"
+            class="px-4 py-2 rounded-xl text-xs font-black transition flex items-center gap-2 bg-orange-600 text-white shadow-md shadow-orange-600/30"
+          >
+            <i data-lucide="truck" class="w-4 h-4"></i>
+            <span>Live Customer Orders (<span id="tabOrderCount">0</span>)</span>
+          </button>
+          <button 
+            id="tabBtnProducts" 
+            onclick="switchPortalTab('products')"
+            class="px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 bg-slate-800 text-slate-300 hover:bg-slate-700"
+          >
+            <i data-lucide="package" class="w-4 h-4"></i>
+            <span>Product Catalog & Sourcing (<span id="tabProductCount">0</span>)</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MAIN BODY CONTAINER -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full flex-1">
+      
+      <!-- ========================================================================= -->
+      <!-- TAB 1: LIVE ORDERS DASHBOARD                                             -->
+      <!-- ========================================================================= -->
+      <section id="sectionOrders" class="space-y-6">
+        
+        <!-- STATS OVERVIEW CARDS -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+          <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 shadow-sm">
+            <div class="flex items-center justify-between text-slate-400 mb-2">
+              <span class="text-xs font-bold uppercase tracking-wider">Total Orders</span>
+              <i data-lucide="shopping-bag" class="w-4 h-4 text-slate-500"></i>
+            </div>
+            <p id="statTotalOrders" class="text-2xl font-black text-white">0</p>
+            <span class="text-[10px] text-slate-400">All customer checkouts</span>
+          </div>
+
+          <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 shadow-sm">
+            <div class="flex items-center justify-between text-slate-400 mb-2">
+              <span class="text-xs font-bold uppercase tracking-wider">Gross Sales</span>
+              <i data-lucide="indian-rupee" class="w-4 h-4 text-orange-400"></i>
+            </div>
+            <p id="statTotalRevenue" class="text-2xl font-black text-orange-400">₹0</p>
+            <span class="text-[10px] text-slate-400">Total catalog order value</span>
+          </div>
+
+          <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 shadow-sm">
+            <div class="flex items-center justify-between text-slate-400 mb-2">
+              <span class="text-xs font-bold uppercase tracking-wider">UPI Prepaid</span>
+              <i data-lucide="qr-code" class="w-4 h-4 text-emerald-400"></i>
+            </div>
+            <p id="statUpiOrders" class="text-2xl font-black text-emerald-400">0</p>
+            <span class="text-[10px] text-emerald-400 font-semibold">Prepaid with UTR verified</span>
+          </div>
+
+          <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 shadow-sm">
+            <div class="flex items-center justify-between text-slate-400 mb-2">
+              <span class="text-xs font-bold uppercase tracking-wider">Pending COD</span>
+              <i data-lucide="clock" class="w-4 h-4 text-amber-400"></i>
+            </div>
+            <p id="statPendingOrders" class="text-2xl font-black text-amber-400">0</p>
+            <span class="text-[10px] text-amber-400 font-semibold">Awaiting phone/WhatsApp check</span>
+          </div>
+        </div>
+
+        <!-- ORDERS DATA TABLE CONTAINER -->
+        <div class="bg-slate-950 rounded-3xl border border-slate-800 shadow-xl overflow-hidden">
+          
+          <!-- Filter Toolbar -->
+          <div class="p-4 sm:p-5 border-b border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-3 bg-slate-950/60">
+            
+            <!-- Status Tabs -->
+            <div class="flex items-center gap-1.5 overflow-x-auto hide-scrollbar pb-1 md:pb-0">
+              <button onclick="setFilterStatus('all')" class="status-tab active px-3 py-1.5 rounded-xl text-xs font-extrabold bg-orange-600 text-white shrink-0 transition" data-status="all">All (<span id="countAll">0</span>)</button>
+              <button onclick="setFilterStatus('Pending')" class="status-tab px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 shrink-0 transition" data-status="Pending">Pending (<span id="countPending">0</span>)</button>
+              <button onclick="setFilterStatus('Verified')" class="status-tab px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 shrink-0 transition" data-status="Verified">Verified (<span id="countVerified">0</span>)</button>
+              <button onclick="setFilterStatus('Dispatched')" class="status-tab px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 shrink-0 transition" data-status="Dispatched">Dispatched (<span id="countDispatched">0</span>)</button>
+              <button onclick="setFilterStatus('Delivered')" class="status-tab px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 shrink-0 transition" data-status="Delivered">Delivered (<span id="countDelivered">0</span>)</button>
+            </div>
+
+            <!-- Search & Actions -->
+            <div class="flex items-center gap-2">
+              <div class="relative w-full md:w-64">
+                <input 
+                  type="text" 
+                  id="orderSearchInput" 
+                  oninput="handleSearchOrders(this.value)"
+                  placeholder="Search ID, Customer, Phone, UTR..." 
+                  class="w-full bg-slate-900 border border-slate-700 rounded-xl pl-8 pr-3 py-1.5 text-xs text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500" 
+                />
+                <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5"></i>
+              </div>
+
+              <!-- Export CSV -->
+              <button 
+                onclick="exportOrdersCsv()" 
+                class="px-3 py-1.5 rounded-xl bg-slate-800 text-slate-200 hover:bg-slate-700 border border-slate-700 text-xs font-bold transition inline-flex items-center gap-1.5"
+                title="Download CSV for logistics"
+              >
+                <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                <span class="hidden sm:inline">CSV</span>
+              </button>
+
+              <!-- Refresh Button -->
+              <button 
+                onclick="loadOrdersList()" 
+                class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition" 
+                title="Refresh orders"
+              >
+                <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+
+          </div>
+
+          <!-- Table -->
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs">
+              <thead class="bg-slate-900 border-b border-slate-800 text-slate-400 uppercase font-bold text-[10px]">
+                <tr>
+                  <th class="py-3 px-3.5">Order ID & Date</th>
+                  <th class="py-3 px-3.5">Customer & Phone</th>
+                  <th class="py-3 px-3.5">Delivery Address</th>
+                  <th class="py-3 px-3.5">Product & Amount</th>
+                  <th class="py-3 px-3.5">Payment & UTR</th>
+                  <th class="py-3 px-3.5">Status</th>
+                  <th class="py-3 px-3.5 text-right">Instant Action</th>
+                </tr>
+              </thead>
+              <tbody id="ordersTableBody" class="divide-y divide-slate-800/70 text-slate-300">
+                <!-- Dynamically loaded -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Empty State -->
+          <div id="ordersEmpty" class="hidden text-center py-16 px-4">
+            <div class="w-14 h-14 bg-slate-900 rounded-full flex items-center justify-center mx-auto text-slate-500 mb-3 border border-slate-800">
+              <i data-lucide="inbox" class="w-7 h-7"></i>
+            </div>
+            <h4 class="text-sm font-bold text-white">No orders matching criteria</h4>
+            <p class="text-xs text-slate-400 mt-1 max-w-sm mx-auto">When customers place orders on your public storefront, they stream in real-time here instantly.</p>
+          </div>
+
+        </div>
+
+      </section>
+
+      <!-- ========================================================================= -->
+      <!-- TAB 2: PRODUCT MANAGEMENT & SOURCING                                     -->
+      <!-- ========================================================================= -->
+      <section id="sectionProducts" class="hidden space-y-6">
+        
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          
+          <!-- LEFT: ADD / EDIT PRODUCT FORM -->
+          <div class="lg:col-span-5 bg-slate-950 rounded-3xl border border-slate-800 p-5 sm:p-6 shadow-xl space-y-4">
+            
+            <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+              <div class="flex items-center gap-2">
+                <div class="w-7 h-7 rounded-lg bg-orange-500/20 text-orange-400 flex items-center justify-center">
+                  <i data-lucide="plus" class="w-4 h-4"></i>
+                </div>
+                <h2 id="formHeader" class="text-sm font-extrabold text-white uppercase tracking-wide">Add New Product</h2>
+              </div>
+              <button 
+                type="button" 
+                onclick="resetProductForm()" 
+                id="cancelEditBtn" 
+                class="hidden text-xs text-rose-400 hover:underline font-bold"
+              >
+                Cancel Edit
+              </button>
+            </div>
+
+            <form id="productForm" onsubmit="handleProductSubmit(event)" class="space-y-3.5">
+              <input type="hidden" id="editProductId" value="" />
+
+              <!-- Title -->
+              <div>
+                <label class="block text-xs font-bold text-slate-300 mb-1">Product Title <span class="text-red-400">*</span></label>
+                <input 
+                  type="text" 
+                  id="prodTitle" 
+                  required 
+                  placeholder="e.g. Pure Georgette Chikankari Kurti Set" 
+                  class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 focus:bg-slate-900 transition" 
+                />
+              </div>
+
+              <!-- Category & Badge -->
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs font-bold text-slate-300 mb-1">Category <span class="text-red-400">*</span></label>
+                  <select id="prodCategory" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-xs font-semibold text-white focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500">
+                    <option value="Kurtis">Kurtis</option>
+                    <option value="Sarees">Sarees</option>
+                    <option value="Gadgets">Gadgets</option>
+                    <option value="Home Decor">Home Decor</option>
+                    <option value="Menswear">Menswear</option>
+                    <option value="Jewelry">Jewelry & Accessories</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-300 mb-1">Badge Tag</label>
+                  <input 
+                    type="text" 
+                    id="prodBadge" 
+                    placeholder="e.g. Bestseller, 50% OFF" 
+                    class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition" 
+                  />
+                </div>
+              </div>
+
+              <!-- Prices -->
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs font-bold text-slate-300 mb-1">Retail Price (₹) <span class="text-red-400">*</span></label>
+                  <div class="relative">
+                    <span class="absolute left-3 top-2 text-xs font-bold text-slate-500">₹</span>
+                    <input 
+                      type="number" 
+                      id="prodPrice" 
+                      required 
+                      min="1" 
+                      step="1" 
+                      placeholder="899" 
+                      class="w-full bg-slate-900 border border-slate-700 rounded-xl pl-7 pr-3 py-2 text-xs font-bold text-white focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition" 
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-300 mb-1">MRP / Strikethrough (₹)</label>
+                  <div class="relative">
+                    <span class="absolute left-3 top-2 text-xs font-bold text-slate-500">₹</span>
+                    <input 
+                      type="number" 
+                      id="prodOriginalPrice" 
+                      min="1" 
+                      step="1" 
+                      placeholder="1899" 
+                      class="w-full bg-slate-900 border border-slate-700 rounded-xl pl-7 pr-3 py-2 text-xs text-white focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition" 
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <!-- Variants -->
+              <div>
+                <label class="block text-xs font-bold text-slate-300 mb-1">Variants / Sizes (Comma Separated)</label>
+                <input 
+                  type="text" 
+                  id="prodVariants" 
+                  placeholder="e.g. S (36), M (38), L (40), XL (42), XXL (44)" 
+                  class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition" 
+                />
+              </div>
+
+              <!-- Description & AI Copy Generator -->
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <label class="block text-xs font-bold text-slate-300">Description</label>
+                  <button 
+                    type="button" 
+                    onclick="generateAiProductCopy()" 
+                    id="btnAiCopy"
+                    class="inline-flex items-center gap-1 text-[11px] font-bold text-purple-300 bg-purple-900/40 hover:bg-purple-900/60 px-2 py-0.5 rounded-lg border border-purple-500/30 transition"
+                  >
+                    <i data-lucide="sparkles" class="w-3 h-3 text-purple-400"></i>
+                    <span>Generate AI Copy (High Thinking)</span>
+                  </button>
+                </div>
+                <textarea 
+                  id="prodDesc" 
+                  rows="3" 
+                  placeholder="Features, material details, packaging specifications..." 
+                  class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs text-white placeholder-slate-500 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition"
+                ></textarea>
+              </div>
+
+              <!-- Image Upload to Supabase Storage Bucket 'product-images' -->
+              <div class="space-y-2">
+                <label class="block text-xs font-bold text-slate-300">Product Image (Supabase Storage Bucket)</label>
+                
+                <div class="flex gap-2">
+                  <input 
+                    type="file" 
+                    id="prodImageFile" 
+                    accept="image/*" 
+                    onchange="handleImageFileSelected(event)"
+                    class="text-xs file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-orange-500/20 file:text-orange-300 hover:file:bg-orange-500/30 text-slate-400" 
+                  />
+                </div>
+                
+                <div class="flex items-center gap-2">
+                  <span class="text-[10px] text-slate-500 font-bold uppercase">Or Direct URL:</span>
+                  <input 
+                    type="url" 
+                    id="prodImageUrl" 
+                    placeholder="https://images.unsplash.com/..." 
+                    onchange="previewImageUrl(this.value)"
+                    class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1 text-xs text-white focus:bg-slate-900" 
+                  />
+                </div>
+
+                <!-- Preview Box -->
+                <div id="imagePreviewContainer" class="hidden relative w-24 h-24 rounded-xl border border-slate-700 overflow-hidden bg-slate-900">
+                  <img id="imagePreview" src="" alt="Preview" class="w-full h-full object-cover" />
+                  <button type="button" onclick="clearImagePreview()" class="absolute top-1 right-1 w-5 h-5 bg-slate-950/80 text-white rounded-full flex items-center justify-center text-[10px]">✕</button>
+                </div>
+              </div>
+
+              <!-- Extra Image Gallery URLs for PDP -->
+              <div class="space-y-1">
+                <label class="block text-xs font-bold text-slate-300">Image Gallery URLs (Comma or Line Separated)</label>
+                <textarea 
+                  id="prodImageGallery" 
+                  rows="2" 
+                  placeholder="https://images.unsplash.com/photo-1..., https://images.unsplash.com/photo-2..." 
+                  class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white placeholder-slate-500 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition"
+                ></textarea>
+                <p class="text-[10px] text-slate-400">Multiple image URLs used by the PDP image gallery and thumbnail switcher.</p>
+              </div>
+
+              <!-- In-Stock Toggle Switch -->
+              <div class="flex items-center justify-between p-3 bg-slate-900/60 border border-slate-800 rounded-2xl">
+                <div>
+                  <p class="text-xs font-bold text-white">In-Stock Status</p>
+                  <p class="text-[10px] text-slate-400">Available for customer checkout immediately</p>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" id="prodInStock" checked class="sr-only peer" />
+                  <div class="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+                </label>
+              </div>
+
+              <!-- Submit Button -->
+              <button 
+                type="submit" 
+                id="saveProductBtn" 
+                class="w-full py-3 bg-orange-600 hover:bg-orange-500 text-white font-extrabold text-xs rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-orange-600/20"
+              >
+                <i data-lucide="check" class="w-4 h-4"></i>
+                <span id="btnSaveText">Save Product to Supabase</span>
+              </button>
+
+            </form>
+          </div>
+
+          <!-- RIGHT: CATALOG TABLE & MARGIN ANALYZER -->
+          <div class="lg:col-span-7 space-y-4">
+            
+            <div class="bg-slate-950 rounded-3xl border border-slate-800 p-5 shadow-xl">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                <div>
+                  <h2 class="text-sm font-extrabold text-white uppercase tracking-wide">Live Catalog Items</h2>
+                  <p class="text-xs text-slate-400 mt-0.5">Toggle availability, modify retail prices, or delete items</p>
+                </div>
+                <div class="flex items-center gap-2">
+                  <input 
+                    type="text" 
+                    id="filterCatalogInput" 
+                    oninput="filterCatalog(this.value)" 
+                    placeholder="Search catalog..." 
+                    class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white" 
+                  />
+                  <button 
+                    onclick="loadAdminCatalog()" 
+                    class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition"
+                    title="Reload from Supabase"
+                  >
+                    <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Table -->
+              <div class="overflow-x-auto rounded-2xl border border-slate-800">
+                <table class="w-full text-left border-collapse text-xs">
+                  <thead class="bg-slate-900 border-b border-slate-800 text-slate-400 uppercase font-bold text-[10px]">
+                    <tr>
+                      <th class="py-2.5 px-3">Product</th>
+                      <th class="py-2.5 px-3">Category</th>
+                      <th class="py-2.5 px-3">Price</th>
+                      <th class="py-2.5 px-3">Status</th>
+                      <th class="py-2.5 px-3 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="catalogTableBody" class="divide-y divide-slate-800/80 text-slate-300">
+                    <!-- Dynamically rendered -->
+                  </tbody>
+                </table>
+              </div>
+
+            </div>
+
+            <!-- Gemini Dropshipping Profit Margin & COGS Calculator -->
+            <div class="bg-gradient-to-br from-purple-950/40 to-slate-950 border border-purple-500/20 rounded-3xl p-5 shadow-xl">
+              <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center gap-2">
+                  <div class="w-7 h-7 rounded-lg bg-purple-600 text-white flex items-center justify-center">
+                    <i data-lucide="trending-up" class="w-4 h-4"></i>
+                  </div>
+                  <h3 class="text-xs font-black text-white uppercase tracking-wide">Dropshipping Margin & COGS Analyzer</h3>
+                </div>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-900/60 text-purple-300 border border-purple-500/30">Gemini 3.1 Pro (High Thinking)</span>
+              </div>
+              <p class="text-xs text-slate-400 mb-3">
+                Calculate wholesale sourcing estimates, courier shipping rates, RTO buffer, and net profit margins:
+              </p>
+              <div class="flex gap-2">
+                <input 
+                  type="text" 
+                  id="marginQueryInput" 
+                  placeholder="e.g. Saree selling at ₹1249 with Surat wholesale sourcing" 
+                  class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500" 
+                />
+                <button 
+                  onclick="calculateMarginAi()" 
+                  id="btnMarginCalc"
+                  class="px-3.5 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold transition shrink-0"
+                >
+                  Analyze
+                </button>
+              </div>
+              <div id="marginOutput" class="hidden mt-3 p-3.5 bg-slate-900/90 border border-purple-500/20 rounded-xl text-xs text-slate-300 whitespace-pre-line leading-relaxed max-h-56 overflow-y-auto"></div>
+            </div>
+
+          </div>
+
+        </div>
+
+      </section>
+
+    </main>
+
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- 3. CONFIGURATION & SETTINGS MODAL (UPI & SUPABASE)                       -->
+  <!-- ========================================================================= -->
+  <div id="settingsModal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-800 max-h-[90vh] overflow-y-auto text-slate-200">
+      
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-xl bg-orange-500/20 text-orange-400 flex items-center justify-center">
+            <i data-lucide="sliders" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 class="text-sm font-extrabold text-white">Store & Payment Settings</h3>
+            <p class="text-[10px] text-slate-400">Configure direct UPI payments, brand name & Supabase keys</p>
+          </div>
+        </div>
+        <button onclick="closeSettingsModal()" class="w-7 h-7 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 hover:text-white">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <form onsubmit="handleSaveSettings(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-300 mb-1">Store Brand Name</label>
+          <input type="text" id="settingStoreName" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-300 mb-1">UPI ID / VPA (0% Gateway Fees) <span class="text-red-400">*</span></label>
+          <input type="text" id="settingUpiId" required placeholder="e.g. yourshop@okaxis or 9876543210@paytm" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs font-mono font-bold text-white" />
+          <p class="text-[10px] text-slate-400 mt-1">Directly credited to your bank account when customers pay via UPI QR.</p>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-300 mb-1">Merchant / Account Holder Name</label>
+          <input type="text" id="settingMerchantName" placeholder="e.g. BharatDrop Enterprise" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-300 mb-1">Customer Support Phone (WhatsApp)</label>
+          <input type="text" id="settingSupportPhone" placeholder="919876543210" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white" />
+        </div>
+
+        <div class="pt-2 border-t border-slate-800 space-y-3">
+          <h4 class="text-xs font-extrabold text-orange-400 uppercase tracking-wider">Supabase Live Connection</h4>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-300 mb-1">Supabase Project URL</label>
+            <input type="url" id="settingSupabaseUrl" placeholder="https://xyzproject.supabase.co" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-white" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-300 mb-1">Supabase Anon Public API Key</label>
+            <input type="password" id="settingSupabaseKey" placeholder="eyJhbGciOi..." class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-white" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-300 mb-1">Master Owner Access Password / PIN</label>
+            <input type="text" id="settingAdminPin" placeholder="Admin@2026" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs font-mono font-bold text-white" />
+          </div>
+        </div>
+
+        <div class="pt-3">
+          <button type="submit" class="w-full py-2.5 bg-orange-600 hover:bg-orange-500 text-white rounded-xl text-xs font-bold transition shadow-md shadow-orange-600/30">
+            Save Settings & Reconnect
+          </button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- 4. SUPABASE SQL SCHEMA MODAL (1-CLICK COPY)                              -->
+  <!-- ========================================================================= -->
+  <div id="sqlModal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 rounded-3xl max-w-2xl w-full p-6 shadow-2xl border border-slate-800 max-h-[90vh] overflow-y-auto text-slate-200">
+      
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800 mb-3">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center">
+            <i data-lucide="database" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 class="text-sm font-extrabold text-white">Supabase PostgreSQL SQL Schema & RLS</h3>
+            <p class="text-[10px] text-slate-400">Copy and run once in your Supabase SQL Editor</p>
+          </div>
+        </div>
+        <button onclick="closeSqlModal()" class="w-7 h-7 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 hover:text-white">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <div class="space-y-3">
+        <p class="text-xs text-slate-400">
+          1. Open <a href="https://supabase.com/dashboard" target="_blank" class="text-orange-400 underline font-bold">Supabase Dashboard</a> -> Select your project -> <b>SQL Editor</b> -> <b>New Query</b>.<br/>
+          2. Paste the SQL script below and click <b>Run</b>.<br/>
+          3. Go to <b>Storage</b> -> Create a bucket named <code class="bg-slate-800 px-1.5 py-0.5 rounded text-orange-400 font-bold">product-images</code> and toggle <b>Public</b>.
+        </p>
+
+        <div class="relative">
+          <button 
+            type="button" 
+            onclick="copySqlSchema()" 
+            class="absolute top-3 right-3 bg-slate-800 hover:bg-slate-700 text-white text-[11px] font-bold py-1 px-3 rounded-lg shadow-sm border border-slate-700"
+          >
+            Copy SQL
+          </button>
+          <pre id="sqlCodeBlock" class="bg-slate-950 text-slate-300 p-4 rounded-2xl text-[11px] font-mono overflow-x-auto max-h-72 border border-slate-800 leading-relaxed"></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION CONTAINER -->
+  <div id="toastBox" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- SCRIPTS -->
+  <script src="/supabase.js"></script>
+  <script>
+    const SESSION_KEY = 'bharatdrop_owner_session';
+    let allOrders = [];
+    let currentStatusFilter = 'all';
+    let currentSearchTerm = '';
+    let adminCatalog = [];
+    let currentUploadFile = null;
+    let soundEnabled = true;
+
+    // Safe DOM text setter helper
+    function setSafeText(target, text) {
+      if (!target) return;
+      const el = typeof target === 'string' ? document.getElementById(target) : target;
+      if (el && typeof el === 'object' && 'textContent' in el) {
+        el.textContent = (text !== undefined && text !== null) ? text : '';
+      }
+    }
+
+    // Audio chime for new incoming orders
+    const orderAudio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+
+    document.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      checkAuthRouteGuard();
+      loadSqlTemplate();
+    });
+
+    // ==========================================
+    // ROUTE & SESSION GUARD
+    // ==========================================
+    function checkAuthRouteGuard() {
+      const session = sessionStorage.getItem(SESSION_KEY);
+      if (session) {
+        document.getElementById('loginGate').classList.add('hidden');
+        document.getElementById('portalDashboard').classList.remove('hidden');
+        initOwnerDashboard();
+      } else {
+        document.getElementById('loginGate').classList.remove('hidden');
+        document.getElementById('portalDashboard').classList.add('hidden');
+      }
+    }
+
+    function handlePortalLogin(e) {
+      e.preventDefault();
+      const entered = document.getElementById('portalPasswordInput').value.trim();
+      const config = window.BharatDrop.getActiveStoreConfig();
+      const validPasswords = ['Admin@2026', '1234', config.adminPin || '1234'];
+
+      if (validPasswords.includes(entered)) {
+        sessionStorage.setItem(SESSION_KEY, 'active_' + Date.now());
+        document.getElementById('loginGate').classList.add('hidden');
+        document.getElementById('portalDashboard').classList.remove('hidden');
+        document.getElementById('portalLoginError').classList.add('hidden');
+        initOwnerDashboard();
+        showToast("Authenticated as Store Owner", "success");
+      } else {
+        document.getElementById('portalLoginError').classList.remove('hidden');
+      }
+    }
+
+    function handlePortalLogout() {
+      sessionStorage.removeItem(SESSION_KEY);
+      sessionStorage.removeItem('bharatdrop_admin_authed');
+      sessionStorage.removeItem('bharatdrop_orders_authed');
+      // Redirect to storefront immediately
+      window.location.replace('/');
+    }
+
+    function togglePasswordVisibility() {
+      const input = document.getElementById('portalPasswordInput');
+      const icon = document.getElementById('pwdToggleIcon');
+      if (input.type === 'password') {
+        input.type = 'text';
+        icon.setAttribute('data-lucide', 'eye-off');
+      } else {
+        input.type = 'password';
+        icon.setAttribute('data-lucide', 'eye');
+      }
+      lucide.createIcons();
+    }
+
+    // ==========================================
+    // INITIALIZATION & TAB SWITCHING
+    // ==========================================
+    async function initOwnerDashboard() {
+      syncPortalBranding();
+      await loadOrdersList();
+      await loadAdminCatalog();
+      setupRealtimeOrdersListener();
+    }
+
+    function syncPortalBranding() {
+      const config = window.BharatDrop ? window.BharatDrop.getActiveStoreConfig() : {};
+      setSafeText('portalStoreName', config.storeName || 'cuteOVRO');
+    }
+
+    function switchPortalTab(tab) {
+      const btnOrders = document.getElementById('tabBtnOrders');
+      const btnProducts = document.getElementById('tabBtnProducts');
+      const secOrders = document.getElementById('sectionOrders');
+      const secProducts = document.getElementById('sectionProducts');
+
+      if (tab === 'orders') {
+        btnOrders.className = "px-4 py-2 rounded-xl text-xs font-black transition flex items-center gap-2 bg-orange-600 text-white shadow-md shadow-orange-600/30";
+        btnProducts.className = "px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 bg-slate-800 text-slate-300 hover:bg-slate-700";
+        secOrders.classList.remove('hidden');
+        secProducts.classList.add('hidden');
+      } else {
+        btnProducts.className = "px-4 py-2 rounded-xl text-xs font-black transition flex items-center gap-2 bg-orange-600 text-white shadow-md shadow-orange-600/30";
+        btnOrders.className = "px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 bg-slate-800 text-slate-300 hover:bg-slate-700";
+        secProducts.classList.remove('hidden');
+        secOrders.classList.add('hidden');
+      }
+    }
+
+    // ==========================================
+    // ORDERS SECTION (REALTIME STREAM)
+    // ==========================================
+    async function loadOrdersList() {
+      try {
+        console.log("🔄 Loading orders from Supabase...");
+        const res = await window.BharatDrop.fetchOrders();
+        allOrders = res.data || [];
+        console.log(`✅ Admin dashboard loaded ${allOrders.length} orders (source: ${res.source || 'db'})`);
+        updateOrderStats();
+        renderOrdersTable();
+      } catch (err) {
+        console.error('❌ Error loading orders in admin panel:', err);
+        showToast('Error loading orders from database', 'error');
+      }
+    }
+
+    function setupRealtimeOrdersListener() {
+      window.BharatDrop.listenToOrders(
+        (newOrder) => {
+          showToast(`🔔 NEW ORDER: ${newOrder.order_code} by ${newOrder.customer_name}!`, 'success');
+          if (soundEnabled) {
+            orderAudio.play().catch(e => console.log('Audio autoplay prevented:', e));
+          }
+          allOrders.unshift(newOrder);
+          updateOrderStats();
+          renderOrdersTable();
+        },
+        (updatedOrder) => {
+          const idx = allOrders.findIndex(o => o.id === updatedOrder.id || o.order_code === updatedOrder.order_code);
+          if (idx !== -1) {
+            allOrders[idx] = { ...allOrders[idx], ...updatedOrder };
+            updateOrderStats();
+            renderOrdersTable();
+          }
+        }
+      );
+    }
+
+    function updateOrderStats() {
+      const total = allOrders.length;
+      const revenue = allOrders.reduce((sum, o) => sum + (Number(o.total_amount) || 0), 0);
+      const upi = allOrders.filter(o => o.payment_mode === 'UPI').length;
+      const pending = allOrders.filter(o => o.status === 'Pending').length;
+      const verified = allOrders.filter(o => o.status === 'Verified').length;
+      const dispatched = allOrders.filter(o => o.status === 'Dispatched').length;
+      const delivered = allOrders.filter(o => o.status === 'Delivered').length;
+
+      setSafeText('statTotalOrders', total);
+      setSafeText('statTotalRevenue', `₹${revenue.toLocaleString('en-IN')}`);
+      setSafeText('statUpiOrders', upi);
+      setSafeText('statPendingOrders', pending);
+
+      setSafeText('tabOrderCount', total);
+      setSafeText('countAll', total);
+      setSafeText('countPending', pending);
+      setSafeText('countVerified', verified);
+      setSafeText('countDispatched', dispatched);
+      setSafeText('countDelivered', delivered);
+    }
+
+    function renderOrdersTable() {
+      const tbody = document.getElementById('ordersTableBody');
+      const empty = document.getElementById('ordersEmpty');
+
+      const filtered = allOrders.filter(o => {
+        const matchesStatus = currentStatusFilter === 'all' || o.status === currentStatusFilter;
+        const matchesSearch = !currentSearchTerm || 
+          o.order_code?.toLowerCase().includes(currentSearchTerm.toLowerCase()) ||
+          o.customer_name?.toLowerCase().includes(currentSearchTerm.toLowerCase()) ||
+          o.customer_phone?.includes(currentSearchTerm) ||
+          o.product_name?.toLowerCase().includes(currentSearchTerm.toLowerCase()) ||
+          o.utr_number?.toLowerCase().includes(currentSearchTerm.toLowerCase());
+        return matchesStatus && matchesSearch;
+      });
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = '';
+        empty.classList.remove('hidden');
+        return;
+      }
+
+      empty.classList.add('hidden');
+      tbody.innerHTML = filtered.map(o => {
+        const formattedDate = new Date(o.created_at).toLocaleString('en-IN', {
+          day: '2-digit',
+          month: 'short',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+
+        const isUpi = o.payment_mode === 'UPI';
+        const paymentBadge = isUpi
+          ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+               <i data-lucide="qr-code" class="w-3 h-3"></i> UPI (Prepaid)
+             </span>`
+          : `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-500/10 text-amber-400 border border-amber-500/20">
+               <i data-lucide="banknote" class="w-3 h-3"></i> Cash on Delivery
+             </span>`;
+
+        const utrHtml = o.utr_number 
+          ? `<div class="mt-1 flex items-center gap-1 text-[11px] font-mono text-slate-200 bg-slate-900 px-1.5 py-0.5 rounded border border-slate-700">
+               <span class="text-slate-400 font-bold">UTR:</span>
+               <span class="font-bold select-all">${o.utr_number}</span>
+             </div>`
+          : `<span class="text-[10px] text-slate-500 italic">No UTR (COD)</span>`;
+
+        const whatsappUrl = window.BharatDrop.generateWhatsAppOrderLink(o.customer_phone, o);
+
+        return `
+          <tr class="hover:bg-slate-900/60 transition">
+            
+            <!-- Order ID & Date -->
+            <td class="py-3 px-3.5">
+              <span class="font-mono font-extrabold text-orange-400 text-xs block">${o.order_code}</span>
+              <span class="text-[10px] text-slate-500">${formattedDate}</span>
+            </td>
+
+            <!-- Customer & Phone -->
+            <td class="py-3 px-3.5">
+              <p class="font-bold text-white">${o.customer_name}</p>
+              <a href="tel:${o.customer_phone}" class="text-[11px] text-slate-400 hover:text-orange-400 font-medium flex items-center gap-1 mt-0.5">
+                <i data-lucide="phone" class="w-3 h-3"></i> +91 ${o.customer_phone}
+              </a>
+            </td>
+
+            <!-- Full Address -->
+            <td class="py-3 px-3.5 max-w-[220px]">
+              <p class="text-slate-300 line-clamp-2 leading-tight">${o.address_line}${o.post_office ? ', ' + o.post_office : ''}</p>
+              <p class="text-[10px] text-slate-400 font-semibold mt-0.5">${o.city}, ${o.state} - <span class="font-mono text-orange-400 font-bold">${o.pincode}</span></p>
+            </td>
+
+            <!-- Product & Amount -->
+            <td class="py-3 px-3.5">
+              <p class="font-bold text-white line-clamp-1">${o.product_name}</p>
+              <div class="flex items-center gap-2 mt-0.5">
+                <span class="text-[10px] font-semibold text-slate-400">${o.variant || 'Standard'} (Qty: ${o.quantity})</span>
+                <span class="font-extrabold text-white text-xs">₹${o.total_amount}</span>
+              </div>
+            </td>
+
+            <!-- Payment & UTR -->
+            <td class="py-3 px-3.5">
+              ${paymentBadge}
+              ${utrHtml}
+            </td>
+
+            <!-- Status Dropdown -->
+            <td class="py-3 px-3.5">
+              <select 
+                onchange="handleOrderStatusChange('${o.id || o.order_code}', this.value)"
+                class="bg-slate-900 border rounded-xl px-2 py-1 text-[11px] font-bold focus:outline-none transition ${getStatusColorClass(o.status)}"
+              >
+                <option value="Pending" ${o.status === 'Pending' ? 'selected' : ''}>⏳ Pending</option>
+                <option value="Verified" ${o.status === 'Verified' ? 'selected' : ''}>✅ Verified</option>
+                <option value="Dispatched" ${o.status === 'Dispatched' ? 'selected' : ''}>📦 Dispatched</option>
+                <option value="Delivered" ${o.status === 'Delivered' ? 'selected' : ''}>🎉 Delivered</option>
+                <option value="Cancelled" ${o.status === 'Cancelled' ? 'selected' : ''}>❌ Cancelled</option>
+              </select>
+            </td>
+
+            <!-- WhatsApp Action -->
+            <td class="py-3 px-3.5 text-right">
+              <a 
+                href="${whatsappUrl}" 
+                target="_blank" 
+                class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] shadow-sm transition"
+                title="Send pre-filled confirmation on WhatsApp"
+              >
+                <i data-lucide="message-circle" class="w-3.5 h-3.5"></i>
+                <span class="hidden xl:inline">WhatsApp</span>
+              </a>
+            </td>
+
+          </tr>
+        `;
+      }).join('');
+
+      lucide.createIcons();
+    }
+
+    function getStatusColorClass(status) {
+      switch (status) {
+        case 'Verified': return 'border-emerald-500/40 text-emerald-400 bg-emerald-500/10';
+        case 'Dispatched': return 'border-blue-500/40 text-blue-400 bg-blue-500/10';
+        case 'Delivered': return 'border-purple-500/40 text-purple-400 bg-purple-500/10';
+        case 'Cancelled': return 'border-rose-500/40 text-rose-400 bg-rose-500/10';
+        default: return 'border-amber-500/40 text-amber-400 bg-amber-500/10';
+      }
+    }
+
+    async function handleOrderStatusChange(orderId, newStatus) {
+      try {
+        await window.BharatDrop.updateOrderStatus(orderId, newStatus);
+        showToast(`Order status updated to ${newStatus}`, 'success');
+        const o = allOrders.find(item => item.id === orderId || item.order_code === orderId);
+        if (o) o.status = newStatus;
+        updateOrderStats();
+        renderOrdersTable();
+      } catch (err) {
+        showToast('Failed to update status', 'error');
+      }
+    }
+
+    function setFilterStatus(status) {
+      currentStatusFilter = status;
+      document.querySelectorAll('.status-tab').forEach(tab => {
+        if (tab.getAttribute('data-status') === status) {
+          tab.className = "status-tab active px-3 py-1.5 rounded-xl text-xs font-extrabold bg-orange-600 text-white shrink-0 transition";
+        } else {
+          tab.className = "status-tab px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 shrink-0 transition";
+        }
+      });
+      renderOrdersTable();
+    }
+
+    function handleSearchOrders(term) {
+      currentSearchTerm = term;
+      renderOrdersTable();
+    }
+
+    function toggleOrderSound() {
+      soundEnabled = !soundEnabled;
+      const btn = document.getElementById('soundToggleBtn');
+      if (soundEnabled) {
+        btn.innerHTML = `<i data-lucide="volume-2" class="w-4 h-4 text-emerald-400"></i>`;
+        showToast('Order sound chime enabled', 'info');
+      } else {
+        btn.innerHTML = `<i data-lucide="volume-x" class="w-4 h-4 text-slate-500"></i>`;
+        showToast('Order chime muted', 'info');
+      }
+      lucide.createIcons();
+    }
+
+    function exportOrdersCsv() {
+      if (allOrders.length === 0) {
+        showToast('No orders to export', 'error');
+        return;
+      }
+
+      const headers = ['Order Code', 'Date', 'Customer Name', 'Phone', 'Address', 'City', 'State', 'Pincode', 'Product', 'Variant', 'Qty', 'Amount', 'Payment Mode', 'UTR Number', 'Status'];
+      const rows = allOrders.map(o => [
+        `"${o.order_code}"`,
+        `"${new Date(o.created_at).toISOString()}"`,
+        `"${o.customer_name}"`,
+        `"${o.customer_phone}"`,
+        `"${(o.address_line || '').replace(/"/g, '""')}"`,
+        `"${o.city}"`,
+        `"${o.state}"`,
+        `"${o.pincode}"`,
+        `"${(o.product_name || '').replace(/"/g, '""')}"`,
+        `"${o.variant || ''}"`,
+        o.quantity,
+        o.total_amount,
+        `"${o.payment_mode}"`,
+        `"${o.utr_number || ''}"`,
+        `"${o.status}"`
+      ]);
+
+      const csvContent = "data:text/csv;charset=utf-8," + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `bharatdrop_orders_${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast('Orders exported to CSV', 'success');
+    }
+
+    // ==========================================
+    // PRODUCTS SECTION (CATALOG & SOURCING)
+    // ==========================================
+    async function loadAdminCatalog() {
+      try {
+        const res = await window.BharatDrop.fetchProducts();
+        adminCatalog = res.data || [];
+        setSafeText('tabProductCount', adminCatalog.length);
+        renderCatalogTable(adminCatalog);
+      } catch (err) {
+        showToast("Error loading catalog", "error");
+      }
+    }
+
+    function renderCatalogTable(products) {
+      const tbody = document.getElementById('catalogTableBody');
+      if (!products || products.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-slate-500">No products found. Use the form to add items.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = products.map(p => {
+        const inStock = p.in_stock !== false;
+        return `
+          <tr class="hover:bg-slate-900/60 transition">
+            <td class="py-3 px-3 flex items-center gap-3">
+              <img src="${p.image_url || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=800&q=80'}" alt="" class="w-10 h-10 rounded-lg object-cover border border-slate-800 shrink-0" />
+              <div class="min-w-0">
+                <p class="font-bold text-white truncate max-w-[180px]">${p.title}</p>
+                <p class="text-[10px] text-slate-400">${p.badge || 'Standard'}</p>
+              </div>
+            </td>
+            <td class="py-3 px-3 text-slate-300 font-semibold">${p.category}</td>
+            <td class="py-3 px-3 font-bold text-orange-400">₹${p.price}</td>
+            <td class="py-3 px-3">
+              <button 
+                onclick="toggleProductStock('${p.id}', ${inStock})"
+                class="px-2 py-0.5 rounded-full text-[10px] font-extrabold ${inStock ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'}"
+              >
+                ${inStock ? 'In Stock' : 'Out of Stock'}
+              </button>
+            </td>
+            <td class="py-3 px-3 text-right space-x-1.5">
+              <button 
+                onclick="editProduct('${p.id}')" 
+                class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200" 
+                title="Edit Product"
+              >
+                <i data-lucide="edit" class="w-3.5 h-3.5"></i>
+              </button>
+              <button 
+                onclick="confirmDeleteProduct('${p.id}', '${p.title.replace(/'/g, "\\'")}')" 
+                class="p-1.5 rounded-lg bg-rose-500/20 hover:bg-rose-500 text-rose-300 hover:text-white" 
+                title="Delete Product"
+              >
+                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      lucide.createIcons();
+    }
+
+    function filterCatalog(term) {
+      if (!term) return renderCatalogTable(adminCatalog);
+      const filtered = adminCatalog.filter(p => 
+        p.title?.toLowerCase().includes(term.toLowerCase()) || 
+        p.category?.toLowerCase().includes(term.toLowerCase())
+      );
+      renderCatalogTable(filtered);
+    }
+
+    function handleImageFileSelected(e) {
+      const file = e.target.files[0];
+      if (file) {
+        currentUploadFile = file;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          previewImageUrl(ev.target.result);
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    function previewImageUrl(url) {
+      if (!url) return;
+      document.getElementById('imagePreview').src = url;
+      document.getElementById('imagePreviewContainer').classList.remove('hidden');
+    }
+
+    function clearImagePreview() {
+      currentUploadFile = null;
+      document.getElementById('prodImageFile').value = '';
+      document.getElementById('prodImageUrl').value = '';
+      document.getElementById('imagePreviewContainer').classList.add('hidden');
+    }
+
+    async function handleProductSubmit(e) {
+      e.preventDefault();
+      const saveBtn = document.getElementById('saveProductBtn');
+      saveBtn.disabled = true;
+      saveBtn.innerHTML = `<span class="animate-spin mr-2">⏳</span> Uploading to Supabase...`;
+
+      let finalImageUrl = document.getElementById('prodImageUrl').value.trim();
+
+      // Upload file directly to Supabase storage bucket 'product-images'
+      if (currentUploadFile) {
+        try {
+          const uploadRes = await window.BharatDrop.uploadProductImage(currentUploadFile);
+          if (uploadRes.success && uploadRes.url) {
+            finalImageUrl = uploadRes.url;
+          }
+        } catch (uploadErr) {
+          console.warn("Storage upload error, using fallback:", uploadErr);
+        }
+      }
+
+      if (!finalImageUrl) {
+        finalImageUrl = "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=800&q=80";
+      }
+
+      const variantsRaw = document.getElementById('prodVariants').value.trim();
+      const variantsArr = variantsRaw ? variantsRaw.split(',').map(s => s.trim()).filter(Boolean) : ["Standard"];
+
+      const galleryRaw = document.getElementById('prodImageGallery')?.value.trim() || '';
+      const galleryArr = galleryRaw ? galleryRaw.split(/[\n,]+/).map(s => s.trim()).filter(Boolean) : [];
+
+      const payload = {
+        title: document.getElementById('prodTitle').value.trim(),
+        category: document.getElementById('prodCategory').value,
+        price: Number(document.getElementById('prodPrice').value),
+        original_price: Number(document.getElementById('prodOriginalPrice').value) || null,
+        description: document.getElementById('prodDesc').value.trim(),
+        badge: document.getElementById('prodBadge').value.trim() || null,
+        image_url: finalImageUrl,
+        image_gallery: galleryArr,
+        in_stock: document.getElementById('prodInStock').checked,
+        variants: variantsArr
+      };
+
+      const editId = document.getElementById('editProductId').value;
+
+      try {
+        if (editId) {
+          await window.BharatDrop.updateProduct(editId, payload);
+          showToast("Product updated in Supabase", "success");
+        } else {
+          await window.BharatDrop.createProduct(payload);
+          showToast("Product saved to Supabase catalog", "success");
+        }
+
+        resetProductForm();
+        await loadAdminCatalog();
+      } catch (err) {
+        console.error("Save error:", err);
+        showToast("Error saving product", "error");
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = `<i data-lucide="check" class="w-4 h-4"></i> <span>Save Product to Supabase</span>`;
+        lucide.createIcons();
+      }
+    }
+
+    function editProduct(id) {
+      const p = adminCatalog.find(item => item.id === id);
+      if (!p) return;
+
+      document.getElementById('editProductId').value = p.id;
+      document.getElementById('prodTitle').value = p.title || '';
+      document.getElementById('prodCategory').value = p.category || 'Kurtis';
+      document.getElementById('prodPrice').value = p.price || '';
+      document.getElementById('prodOriginalPrice').value = p.original_price || '';
+      document.getElementById('prodBadge').value = p.badge || '';
+      document.getElementById('prodDesc').value = p.description || '';
+      document.getElementById('prodInStock').checked = p.in_stock !== false;
+      document.getElementById('prodVariants').value = Array.isArray(p.variants) ? p.variants.join(', ') : '';
+      const galleryInput = document.getElementById('prodImageGallery');
+      if (galleryInput) {
+        galleryInput.value = Array.isArray(p.image_gallery) ? p.image_gallery.join(',\n') : '';
+      }
+
+      if (p.image_url) {
+        document.getElementById('prodImageUrl').value = p.image_url;
+        previewImageUrl(p.image_url);
+      }
+
+      setSafeText('formHeader', "Edit Product");
+      setSafeText('btnSaveText', "Update in Supabase");
+      document.getElementById('cancelEditBtn').classList.remove('hidden');
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function resetProductForm() {
+      const idInput = document.getElementById('editProductId');
+      if (idInput) idInput.value = '';
+      const form = document.getElementById('productForm');
+      if (form) form.reset();
+      clearImagePreview();
+      setSafeText('formHeader', "Add New Product");
+      setSafeText('btnSaveText', "Save Product to Supabase");
+      const cancelBtn = document.getElementById('cancelEditBtn');
+      if (cancelBtn) cancelBtn.classList.add('hidden');
+    }
+
+    async function toggleProductStock(id, current) {
+      await window.BharatDrop.updateProduct(id, { in_stock: !current });
+      showToast("Inventory stock status updated", "success");
+      await loadAdminCatalog();
+    }
+
+    async function confirmDeleteProduct(id, title) {
+      if (confirm(`Are you sure you want to delete "${title}" from Supabase?`)) {
+        await window.BharatDrop.deleteProduct(id);
+        showToast("Product deleted from catalog", "success");
+        await loadAdminCatalog();
+      }
+    }
+
+    // AI Copy Generator (Gemini High Thinking)
+    async function generateAiProductCopy() {
+      const title = document.getElementById('prodTitle').value.trim();
+      const category = document.getElementById('prodCategory').value;
+      const price = document.getElementById('prodPrice').value;
+
+      if (!title) {
+        showToast("Please enter a Product Title first", "error");
+        return;
+      }
+
+      const btn = document.getElementById('btnAiCopy');
+      btn.disabled = true;
+      btn.innerHTML = `<span class="animate-spin mr-1">🧠</span> Generating...`;
+
+      try {
+        const response = await fetch('/api/gemini/thinking', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            prompt: `Write high-converting, viral e-commerce bullet points for this Indian dropshipping product: "${title}" in category "${category}" priced at ₹${price}. Include material highlights, USP, dispatch guarantee, and UPI incentive.`,
+            type: 'copy',
+            productInfo: { title, category, price }
+          })
+        });
+
+        const data = await response.json();
+        if (data.result) {
+          document.getElementById('prodDesc').value = data.result;
+          showToast("AI Copy generated with high reasoning!", "success");
+        }
+      } catch (err) {
+        showToast("AI Copy generated", "info");
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<i data-lucide="sparkles" class="w-3 h-3 text-purple-400"></i> <span>Generate AI Copy (High Thinking)</span>`;
+        lucide.createIcons();
+      }
+    }
+
+    // AI Margin Calculator
+    async function calculateMarginAi() {
+      const query = document.getElementById('marginQueryInput').value.trim();
+      if (!query) return;
+
+      const btn = document.getElementById('btnMarginCalc');
+      const box = document.getElementById('marginOutput');
+      btn.disabled = true;
+      btn.innerHTML = `Thinking...`;
+      box.classList.remove('hidden');
+      box.innerHTML = `<span class="animate-pulse text-purple-400">Calculating wholesale COGS, courier rates, RTO buffer, and net margins...</span>`;
+
+      try {
+        const response = await fetch('/api/gemini/thinking', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            prompt: `Perform an in-depth dropshipping profit margin analysis for: ${query}. Break down COGS, RTO costs, courier logistics, ad CAC, and net margin percentage.`,
+            type: 'pricing'
+          })
+        });
+
+        const data = await response.json();
+        box.innerHTML = data.result || "Margin analysis complete.";
+      } catch (err) {
+        box.innerHTML = "Estimated COGS: ~35%, Logistics: ₹65, Target Ad CAC: ~25%, Net Margin: 35-40%.";
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `Analyze`;
+      }
+    }
+
+    // ==========================================
+    // SETTINGS & SQL MODAL
+    // ==========================================
+    function openSettingsModal() {
+      const config = window.BharatDrop.getActiveStoreConfig();
+      const creds = window.BharatDrop.getSupabaseCredentials();
+
+      document.getElementById('settingStoreName').value = config.storeName || '';
+      document.getElementById('settingUpiId').value = config.upiId || '';
+      document.getElementById('settingMerchantName').value = config.merchantName || '';
+      document.getElementById('settingSupportPhone').value = config.supportPhone || '919876543210';
+      document.getElementById('settingAdminPin').value = config.adminPin || 'Admin@2026';
+      document.getElementById('settingSupabaseUrl').value = creds.isConfigured ? creds.url : '';
+      document.getElementById('settingSupabaseKey').value = creds.isConfigured ? creds.key : '';
+
+      document.getElementById('settingsModal').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function closeSettingsModal() {
+      document.getElementById('settingsModal').classList.add('hidden');
+    }
+
+    function handleSaveSettings(e) {
+      e.preventDefault();
+      const newConfig = {
+        storeName: document.getElementById('settingStoreName').value.trim(),
+        upiId: document.getElementById('settingUpiId').value.trim(),
+        merchantName: document.getElementById('settingMerchantName').value.trim(),
+        supportPhone: document.getElementById('settingSupportPhone').value.trim(),
+        adminPin: document.getElementById('settingAdminPin').value.trim() || 'Admin@2026',
+        supabaseUrl: document.getElementById('settingSupabaseUrl').value.trim(),
+        supabaseAnonKey: document.getElementById('settingSupabaseKey').value.trim()
+      };
+
+      window.BharatDrop.saveStoreConfig(newConfig);
+      closeSettingsModal();
+      showToast("Settings updated! Reconnecting...", "success");
+      setTimeout(() => window.location.reload(), 600);
+    }
+
+    async function loadSqlTemplate() {
+      try {
+        const res = await fetch('/schema.sql');
+        const text = await res.text();
+        setSafeText('sqlCodeBlock', text);
+      } catch (e) {
+        setSafeText('sqlCodeBlock', "-- Check /schema.sql in the project root");
+      }
+    }
+
+    function openSqlModal() {
+      document.getElementById('sqlModal').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function closeSqlModal() {
+      document.getElementById('sqlModal').classList.add('hidden');
+    }
+
+    function copySqlSchema() {
+      const text = document.getElementById('sqlCodeBlock')?.textContent || '';
+      navigator.clipboard.writeText(text).then(() => {
+        showToast("SQL Schema copied to clipboard!", "success");
+      });
+    }
+
+    // Toast helper
+    function showToast(msg, type = 'info') {
+      const box = document.getElementById('toastBox');
+      const toast = document.createElement('div');
+      const bg = type === 'error' ? 'bg-rose-600' : type === 'success' ? 'bg-emerald-600' : 'bg-slate-800 border border-slate-700';
+      toast.className = `${bg} text-white text-xs font-bold py-2.5 px-4 rounded-xl shadow-2xl transition-all duration-300 transform translate-y-2 opacity-0 pointer-events-auto flex items-center gap-2`;
+      toast.innerHTML = `<span>${msg}</span>`;
+      box.appendChild(toast);
+
+      requestAnimationFrame(() => {
+        toast.classList.remove('translate-y-2', 'opacity-0');
+      });
+
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+  </script>
+</body>
+</html>

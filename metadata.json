@@ -1,0 +1,6 @@
+{
+  "name": "Zero-Cost Dropshipping UPI Store",
+  "description": "Production-ready dropshipping e-commerce storefront with Supabase database, direct UPI QR & deep-link payments, and admin real-time order dashboard.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
